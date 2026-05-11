@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#0b5394">
-<title>CS188 期中复习笔记 (Lec 01–12)</title>
+<title>CS188 复习笔记 (Lec 01–17)</title>
 <style>
   :root {
     --bg: #fafaf7; --fg: #1a1a1a; --accent: #0b5394;
@@ -70,11 +70,12 @@
 </head>
 <body>
 
-<h1>CS188 期中复习笔记 (Lec 01–12)</h1>
-<p style="color:var(--muted)">范围：Search · CSPs · Games · MDPs · Reinforcement Learning · 来源：sp26 课件 lec01–lec12（已通过 NotebookLM 校对原文）</p>
+<h1>CS188 复习笔记 (Lec 01–17)</h1>
+<p style="color:var(--muted)">范围：Search · CSPs · Games · MDPs · RL · Bayes Nets · Markov Models · HMMs · 来源：sp26 课件 + textbook（已通过 NotebookLM 校对原文）</p>
 
 <div class="toc">
   <strong>目录</strong>
+  <p style="margin:6px 0 4px;font-size:0.88em;color:var(--muted)"><b>期中部分 (Lec 01–12)</b></p>
   <ol>
     <li><a href="#l1">Lec 1 · Intro & Rational Agents</a></li>
     <li><a href="#l2">Lec 2 · Uninformed Search (DFS / BFS / UCS)</a></li>
@@ -88,8 +89,16 @@
     <li><a href="#l10">Lec 10 · MDPs II · Bellman · Policy Iteration</a></li>
     <li><a href="#l11">Lec 11 · RL I (Model-Based / Direct Eval / TD / Q-Learning)</a></li>
     <li><a href="#l12">Lec 12 · RL II (Exploration / Approximate Q / Policy Search)</a></li>
-    <li><a href="#cheat">📋 一页 Cheat Sheet（考前最后看）</a></li>
   </ol>
+  <p style="margin:10px 0 4px;font-size:0.88em;color:var(--muted)"><b>期末部分 (Lec 13–17)</b></p>
+  <ol start="13">
+    <li><a href="#l13">Lec 13 · 概率基础 + 独立性 + Naive Bayes</a></li>
+    <li><a href="#l14">Lec 14 · Bayes Net 表示 + D-Separation</a></li>
+    <li><a href="#l15">Lec 15 · Variable Elimination（精确推理）</a></li>
+    <li><a href="#l16">Lec 16 · Sampling（近似推理：Prior / Rejection / LW / Gibbs）</a></li>
+    <li><a href="#l17">Lec 17 · Markov Models + HMMs + Forward + Viterbi</a></li>
+  </ol>
+  <p style="margin:10px 0 0;font-size:0.88em"><a href="#cheat">📋 期中 Cheat Sheet</a> · <a href="#cheat2">📋 期末 Cheat Sheet (Lec 13–17)</a></p>
 </div>
 
 <hr>
@@ -1747,6 +1756,955 @@ difference = [r + γ · max<sub>a′</sub> Q(s′, a′)] − Q(s, a)<br>
 <p><b>6. Regret</b></p>
 <p>= 实际累计 reward 与 一开始就最优 累计 reward 的差。即使最终学到最优，"路上犯错"也算 regret。</p>
 </div>
+
+<hr>
+
+<!-- ========================= LEC 13 ========================= -->
+<h2 id="l13">13. 概率基础 + 独立性 <span class="lec-tag">Lec 13</span></h2>
+
+<h3>13.1 概率论速通</h3>
+
+<h4>Possible worlds + Random variables</h4>
+<ul>
+  <li><b>Possible world</b> ω：世界的一种完整可能状态；<b>probability model</b> 给每个 ω 分配 P(ω)∈[0,1] 且 ∑P(ω)=1</li>
+  <li><b>Random variable</b> X：ω → 值的函数；<b>distribution</b> P(X) 给 X 每个取值的概率</li>
+</ul>
+
+<h4>四种概率"形状"</h4>
+<table>
+<tr><th>形状</th><th>例子</th><th>含义</th></tr>
+<tr><td><b>Joint</b> P(X,Y)</td><td>P(T,W)</td><td>所有 (X,Y) 组合的概率</td></tr>
+<tr><td><b>Marginal</b> P(X)</td><td>P(W)=∑<sub>t</sub> P(t,W)</td><td>把 Y 求和掉</td></tr>
+<tr><td><b>Conditional</b> P(X|Y)</td><td>P(W|T=c)</td><td>给定 Y 后 X 的分布</td></tr>
+<tr><td><b>Conditional 表</b> P(X|Y)</td><td>P(W|T)</td><td>Y 每个取值各对应一个条件分布</td></tr>
+</table>
+
+<h4>必背公式</h4>
+<div class="formula-block">
+<b>Marginalization</b>：P(X) = ∑<sub>y</sub> P(X, y)<br>
+<b>Conditional</b>：P(X | Y) = P(X, Y) / P(Y)<br>
+<b>Product Rule</b>：P(X, Y) = P(X|Y) P(Y) = P(Y|X) P(X)<br>
+<b>Chain Rule</b>：P(X₁,...,X<sub>n</sub>) = ∏<sub>i</sub> P(X<sub>i</sub> | X₁,...,X<sub>i-1</sub>)<br>
+<b>Bayes Rule</b>：P(X | Y) = P(Y|X) P(X) / P(Y)
+</div>
+
+<h4>Inference by Enumeration</h4>
+<p>变量分成 query Q, evidence E=e, hidden H：</p>
+<ol>
+  <li>选 joint 中与 e 一致的行</li>
+  <li>把 hidden 求和掉 → P(Q, e)</li>
+  <li>Normalize → P(Q | e) = α·P(Q, e)</li>
+</ol>
+<p>问题：joint 需要 O(d<sup>n</sup>) 空间，指数爆炸 → 引出 Bayes Net。</p>
+
+<h3>13.2 独立性</h3>
+
+<div class="formula-block">
+<b>绝对独立</b> X ⊥ Y ⟺ ∀x,y: P(x, y) = P(x) P(y)<br>
+等价：P(x | y) = P(x) 或 P(y | x) = P(y)
+</div>
+
+<p><b>独立性的威力</b>：n 个独立变量的 joint 从 O(2<sup>n</sup>) 降到 O(n)。但 <span class="key">绝对独立太罕见</span>。</p>
+
+<div class="formula-block">
+<b>条件独立</b> ⭐⭐⭐ &nbsp; X ⊥ Y | Z ⟺ ∀x,y,z: P(x, y | z) = P(x|z) P(y|z)<br>
+等价：P(x | y, z) = P(x | z)
+</div>
+
+<p><b>直觉</b>："给定 Z 后，Y 不再为 X 提供额外信息" —— Z 屏蔽了 X,Y 之间的关联。</p>
+
+<h4>经典例子</h4>
+<ul>
+  <li><b>Traffic / Umbrella / Raining</b>：T ⊥̸ U（看到伞猜可能堵车）；但 T ⊥ U | R</li>
+  <li><b>Fire / Smoke / Alarm</b>：F ⊥̸ A；但 F ⊥ A | S（火只通过烟雾触发警报）</li>
+</ul>
+
+<h3>13.3 Naive Bayes（Ghostbusters）</h3>
+
+<p>鬼的位置 G，9 个格子的颜色读数 C<sub>1,1</sub>,...,C<sub>3,3</sub>。每个 C 只看与 G 的距离。</p>
+
+<p><b>关键独立性</b>：给定 G 后，任意两个 C 条件独立：</p>
+<div class="formula-block">
+C<sub>x,y</sub> ⊥ C<sub>a,b</sub> | G
+</div>
+
+<p>链式法则展开 + 条件独立简化：</p>
+<div class="formula-block">
+P(G, C<sub>1,1</sub>,..., C<sub>3,3</sub>) = P(G) · ∏<sub>x,y</sub> P(C<sub>x,y</sub> | G)
+</div>
+
+<p>参数：9 × 4<sup>9</sup> ≈ 230万 → 9 + 9·4 = 45 个。</p>
+
+<div class="good">
+<b>Naive Bayes 结构</b>：一个 class 变量 + 多个 evidence 变量，evidence 给定 class 后两两条件独立。BN 最简单的特例。
+</div>
+
+<div class="quiz">
+<b>📝 高频考点 · Lec 13</b>
+<p><b>1. 写 joint = product of conditionals</b>：给 BN，用 chain rule + 独立性写出 joint 形式。</p>
+<p><b>2. 区分边缘 / 联合 / 条件</b>：从 joint 表算 P(A)、P(A|B)、P(A,B)。</p>
+<p><b>3. 判断绝对独立 vs 条件独立</b>：注意两者<b>互不蕴含</b>。</p>
+</div>
+
+<hr>
+
+<!-- ========================= LEC 14 ========================= -->
+<h2 id="l14">14. Bayes Net 表示 + D-Separation <span class="lec-tag">Lec 14</span></h2>
+
+<h3>14.1 BN Syntax</h3>
+
+<div class="formula-block">
+<b>Bayes Net = DAG（图结构）+ 每个节点一张 CPT</b>
+</div>
+
+<ul>
+  <li><b>节点</b>：每个变量一个</li>
+  <li><b>有向边</b>：表示"直接影响"，必须无环</li>
+  <li><b>CPT</b>：每个节点存 P(X<sub>i</sub> | Parents(X<sub>i</sub>))</li>
+</ul>
+
+<h4>📊 Burglary / Alarm BN</h4>
+
+<div class="diagram">
+<svg viewBox="0 0 380 240" width="380">
+  <!-- Edges -->
+  <line class="edge-line" x1="100" y1="50" x2="180" y2="110"/>
+  <line class="edge-line" x1="260" y1="50" x2="180" y2="110"/>
+  <line class="edge-line" x1="180" y1="110" x2="100" y2="190"/>
+  <line class="edge-line" x1="180" y1="110" x2="260" y2="190"/>
+  <!-- Nodes -->
+  <circle class="node-circle" cx="100" cy="50" r="24" fill="#ffcdd2"/><text class="node-text" x="100" y="50">B</text>
+  <circle class="node-circle" cx="260" cy="50" r="24" fill="#ffcdd2"/><text class="node-text" x="260" y="50">E</text>
+  <circle class="node-circle" cx="180" cy="110" r="24" fill="#fff9c4"/><text class="node-text" x="180" y="110">A</text>
+  <circle class="node-circle" cx="100" cy="190" r="24" fill="#c8e6c9"/><text class="node-text" x="100" y="190">J</text>
+  <circle class="node-circle" cx="260" cy="190" r="24" fill="#c8e6c9"/><text class="node-text" x="260" y="190">M</text>
+</svg>
+<div class="diagram-caption">Burglary, Earthquake → Alarm → John calls, Mary calls。5 张 CPT：P(B), P(E), P(A|B,E), P(J|A), P(M|A)。</div>
+</div>
+
+<h4>参数数量</h4>
+<table>
+<tr><th></th><th>无独立性 joint</th><th>BN (max k parents)</th></tr>
+<tr><td>大小</td><td>O(d<sup>n</sup>) 指数</td><td>O(n · d<sup>k</sup>) 线性 in n</td></tr>
+</table>
+
+<h3>14.2 两套等价语义 ⭐⭐⭐</h3>
+
+<div class="formula-block">
+<b>Global Semantics</b>：P(X₁,...,X<sub>n</sub>) = ∏<sub>i</sub> P(X<sub>i</sub> | Parents(X<sub>i</sub>))<br>
+<br>
+<b>Local Semantics</b>：每个变量与所有非后代 条件独立 | 父节点<br>
+X<sub>i</sub> ⊥ non-descendants(X<sub>i</sub>) | Parents(X<sub>i</sub>)
+</div>
+
+<p><b>例：算 P(b, ¬e, a, ¬j, ¬m)</b>：</p>
+<div class="formula-block">
+= P(b) · P(¬e) · P(a|b,¬e) · P(¬j|a) · P(¬m|a)<br>
+= 0.001 · 0.998 · 0.94 · 0.1 · 0.3 = 0.0000282
+</div>
+
+<div class="good">
+<b>Global ⇔ Local 等价</b>：BN 因子化是链式法则的简化版——非父亲的前序变量被独立性删掉了。
+</div>
+
+<h3>14.3 D-Separation（独立性判定算法）⭐⭐⭐</h3>
+
+<p>Local semantics 只告诉你<b>显然</b>的独立性。<b>D-separation 用图算法读出 BN 蕴含的所有条件独立性。</b></p>
+
+<h4>三种基本路径片段</h4>
+
+<table>
+<tr><th>结构</th><th>形状</th><th>Z 未观测</th><th>Z 被观测</th></tr>
+<tr><td>Causal chain</td><td>X → Z → Y</td><td>active</td><td><b>blocked</b></td></tr>
+<tr><td>Common cause</td><td>X ← Z → Y</td><td>active</td><td><b>blocked</b></td></tr>
+<tr><td>V-structure</td><td>X → Z ← Y</td><td><b>blocked</b></td><td>active（或 Z 后代被观测时）</td></tr>
+</table>
+
+<div class="diagram">
+<svg viewBox="0 0 540 130" width="540">
+  <!-- Chain -->
+  <circle class="node-circle" cx="40" cy="60" r="20" fill="#fff"/><text class="node-text" x="40" y="60">X</text>
+  <circle class="node-circle" cx="100" cy="60" r="20" fill="#fff"/><text class="node-text" x="100" y="60">Z</text>
+  <circle class="node-circle" cx="160" cy="60" r="20" fill="#fff"/><text class="node-text" x="160" y="60">Y</text>
+  <line class="edge-line" x1="60" y1="60" x2="80" y2="60" marker-end="url(#a1)"/>
+  <line class="edge-line" x1="120" y1="60" x2="140" y2="60" marker-end="url(#a1)"/>
+  <text x="100" y="105" text-anchor="middle" font-size="11" fill="#555">Chain</text>
+  <!-- Common cause -->
+  <circle class="node-circle" cx="220" cy="60" r="20" fill="#fff"/><text class="node-text" x="220" y="60">X</text>
+  <circle class="node-circle" cx="280" cy="30" r="20" fill="#fff"/><text class="node-text" x="280" y="30">Z</text>
+  <circle class="node-circle" cx="340" cy="60" r="20" fill="#fff"/><text class="node-text" x="340" y="60">Y</text>
+  <line class="edge-line" x1="270" y1="40" x2="240" y2="55" marker-end="url(#a1)"/>
+  <line class="edge-line" x1="290" y1="40" x2="320" y2="55" marker-end="url(#a1)"/>
+  <text x="280" y="105" text-anchor="middle" font-size="11" fill="#555">Common cause</text>
+  <!-- V-structure -->
+  <circle class="node-circle" cx="400" cy="30" r="20" fill="#fff"/><text class="node-text" x="400" y="30">X</text>
+  <circle class="node-circle" cx="460" cy="60" r="20" fill="#ffcdd2"/><text class="node-text" x="460" y="60">Z</text>
+  <circle class="node-circle" cx="520" cy="30" r="20" fill="#fff"/><text class="node-text" x="520" y="30">Y</text>
+  <line class="edge-line" x1="410" y1="40" x2="445" y2="55" marker-end="url(#a1)"/>
+  <line class="edge-line" x1="510" y1="40" x2="475" y2="55" marker-end="url(#a1)"/>
+  <text x="460" y="105" text-anchor="middle" font-size="11" fill="#c0392b" font-weight="600">V-structure (反直觉!)</text>
+  <defs>
+    <marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#555"/>
+    </marker>
+  </defs>
+</svg>
+<div class="diagram-caption">前两种：Z 观测 → 阻断；V-structure：Z 或 Z 后代观测 → 激活（"explaining away"）。</div>
+</div>
+
+<div class="warn">
+<b>V-structure 反直觉</b>：未观测时 X 和 Y 独立；观测 Z（或 Z 的<b>任一后代</b>）反而<b>不</b>独立。
+<p><b>Explaining away 直觉</b>：B 和 E 本来独立，但听到 Alarm 响了之后，"地震" 和 "入室" 互相竞争解释 alarm → 它们不再独立。</p>
+</div>
+
+<h4>D-Separation 算法</h4>
+<ol>
+  <li>列 X 到 Y 的<b>所有</b>无向路径</li>
+  <li>每条路径拆成 3-节点片段查表</li>
+  <li>一条路径 active ⟺ 所有片段 active</li>
+  <li><b>有任一 active 路径 → 不独立；全部 blocked → 独立</b></li>
+</ol>
+
+<h3>14.4 工作例：Alarm 网络</h3>
+
+<table>
+<tr><th>查询</th><th>分析</th><th>结论</th></tr>
+<tr><td>J ⊥ M ?</td><td>J ← A → M (common cause), A 未观测 → active</td><td><b>不独立</b></td></tr>
+<tr><td>J ⊥ M | A ?</td><td>A 观测 → blocked</td><td>独立 ✓</td></tr>
+<tr><td>B ⊥ E ?</td><td>B → A ← E (V), A 及后代 J,M 都未观测 → blocked</td><td>独立 ✓</td></tr>
+<tr><td>B ⊥ E | A ?</td><td>V-structure, A 被观测 → active</td><td><b>不独立</b>（explaining away）</td></tr>
+<tr><td>B ⊥ E | J ?</td><td>V, A 未观测但后代 J 观测 → active</td><td><b>不独立</b></td></tr>
+<tr><td>B ⊥ J | A ?</td><td>B → A → J (chain), A 观测 → blocked</td><td>独立 ✓</td></tr>
+</table>
+
+<div class="quiz">
+<b>📝 高频考点 · Lec 14</b>
+<p><b>1. 写 BN 的 joint</b>：joint = ∏ CPTs，会用具体数字算 P(b,¬e,a,...).</p>
+<p><b>2. D-separation 判断</b>：必考。注意 V-structure 反直觉 + 后代观测也激活。</p>
+<p><b>3. CPT 参数数量</b>：node X 有 k 个父节点（值域大小 d_p1,...,d_pk），自己值域 d → 该 CPT 有 d_p1·...·d_pk·(d-1) 个<b>自由</b>参数（每行和=1 扣一个自由度）。</p>
+<p><b>4. Multiple paths</b>：任<b>一</b> active 就不独立；要全部 blocked 才独立。</p>
+<p><b>5. 绝对独立 vs 条件独立 互不蕴含</b>：V-structure 是反例。</p>
+</div>
+
+<hr>
+
+<!-- ========================= LEC 15 ========================= -->
+<h2 id="l15">15. Variable Elimination（精确推理）<span class="lec-tag">Lec 15</span></h2>
+
+<h3>15.1 动机</h3>
+
+<p>Inference by Enumeration：<code>P(B|j,m) = α ∑<sub>e,a</sub> P(B)P(e)P(a|B,e)P(j|a)P(m|a)</code>。<b>对 hidden 变量指数级求和</b>。</p>
+
+<p><b>VE 核心</b>：用分配律 + 求和号<b>内推</b>避免重复计算：</p>
+<div class="formula-block">
+α ∑<sub>e</sub> ∑<sub>a</sub> P(B)P(e)P(a|B,e)P(j|a)P(m|a)<br>
+= α · P(B) · ∑<sub>e</sub> P(e) · ∑<sub>a</sub> P(a|B,e)P(j|a)P(m|a)
+</div>
+
+<p>类比：<code>uwy + uwz + ... + vxz</code>（16乘7加）= <code>(u+v)(w+x)(y+z)</code>（2乘3加）。</p>
+
+<h3>15.2 Factor Zoo</h3>
+
+<div class="formula-block">
+<b>Factor</b> = unnormalized probability（多维表）。数值上 proportional to 某概率，但不一定加起来 = 1。
+</div>
+
+<div class="warn">
+<b>大小写约定</b> ⭐<br>
+• <b>大写</b> A, B：变量本身（多种取值）<br>
+• <b>小写</b> a, b：变量取某具体值（已锁定）<br>
+Factor 形状由 conditional bar 两边的<b>所有大写字母</b>决定。
+</div>
+
+<table>
+<tr><th>Factor</th><th>大写数</th><th>Entries</th><th>加起来等于</th></tr>
+<tr><td>P(A, J)</td><td>2</td><td>|A|·|J|</td><td>1</td></tr>
+<tr><td>P(a, J)</td><td>1 (J)</td><td>|J|</td><td>P(a)</td></tr>
+<tr><td>P(J | a)</td><td>1 (J)</td><td>|J|</td><td>1</td></tr>
+<tr><td>P(J | A)</td><td>2</td><td>|A|·|J|</td><td>|A|（每行=1）</td></tr>
+<tr><td>P(j | A)</td><td>1 (A)</td><td>|A|</td><td>无归一性</td></tr>
+</table>
+
+<h3>15.3 两个基本操作</h3>
+
+<h4>Pointwise Product</h4>
+<div class="formula-block">
+新 factor 变量集 = 两个原 factor 变量集的<b>并集</b>。对应 entries 相乘。<br>
+(f × g)(x, y, z) = f(x, y) · g(y, z)
+</div>
+
+<p><b>不是矩阵乘法！</b> 类似 database join。⚠️ <b>Factor blowup 风险</b>：P(U,V) × P(V,W) × P(W,X)，10维 → 300 entries 爆到 10000。</p>
+
+<h4>Sum Out（消元）</h4>
+<div class="formula-block">
+把某变量加掉，factor 变小。<br>
+∑<sub>J</sub> P(A, J) = P(A, j) + P(A, ¬j) = P(A)
+</div>
+
+<div class="good">
+<b>为什么先 product 再 sum？</b><br>
+变量 H 散在多个 factor 里，对其中一个单独求和是错的（其他里 H 还活着）。必须先 product 让 H 集中到一个 factor，再 sum out。
+</div>
+
+<h3>15.4 VE 算法骨架</h3>
+
+<pre>查询: P(Q | E1=e1, ..., Ek=ek)
+
+1. 初始 factors = 所有 CPTs（evidence 实例化）
+2. While 还有 hidden variable H：
+     a. 收集含 H 的 factors
+     b. Pointwise product → 大 factor
+     c. Sum out H → 新 factor (不含 H)
+     d. 替换原来的 factors
+3. 剩下 factors pointwise product
+4. Normalize → P(Q | e)</pre>
+
+<h4>完整例：Burglary 网络查 P(B | j, m)</h4>
+
+<p>初始 factors（j, m 已实例化）：</p>
+<div class="formula-block">
+P(B), &nbsp; P(E), &nbsp; P(A | B, E), &nbsp; P(j | A), &nbsp; P(m | A)
+</div>
+
+<table>
+<tr><th>Step</th><th>消变量</th><th>含此变量的 factors</th><th>Product 后变量集</th><th>Sum out 后</th></tr>
+<tr><td>1</td><td>A</td><td>P(A|B,E), P(j|A), P(m|A)</td><td>{A, B, E}, 8 entries</td><td>f₁(B, E) = P(j, m | B, E)</td></tr>
+<tr><td>2</td><td>E</td><td>P(E), f₁(B, E)</td><td>{B, E}, 4 entries</td><td>f₂(B) = P(j, m | B)</td></tr>
+<tr><td>3</td><td>—</td><td>P(B), f₂(B)</td><td>P(B) · f₂(B) = P(B, j, m)</td><td>Normalize → P(B|j,m)</td></tr>
+</table>
+
+<div class="good">
+实际数字：Car Insurance 网络上 Enumeration 227M 次操作 vs VE 221K 次 —— <b>~1000 倍加速</b>。
+</div>
+
+<h3>15.5 消元顺序极重要</h3>
+
+<p>考虑 P(D) = α ∑<sub>z,a,b,c</sub> P(z)P(a|z)P(b|z)P(c|z)P(D|z)（Z 是根，A/B/C/D 是孩子）：</p>
+
+<table>
+<tr><th>顺序</th><th>最大中间 factor</th></tr>
+<tr><td>Z 先消</td><td>2 变量 (D, Z)，便宜</td></tr>
+<tr><td>Z 最后消</td><td>4 变量 (A, B, C, D)，2<sup>n</sup> 爆炸</td></tr>
+</table>
+
+<div class="warn">
+<b>VE 复杂度由最大中间 factor 决定</b>（空间瓶颈）。<br>
+启发式：<br>
+• <b>Min-neighbors</b>：选与最少 factor 相关的变量先消<br>
+• Polytree（无向树）：从叶子到根，<b>线性时间</b><br>
+• 一般 BN：inference 是 <b>#P-hard</b>
+</div>
+
+<div class="quiz">
+<b>📝 高频考点 · Lec 15</b>
+<p><b>1. 走完整 VE 流程</b>：给消元顺序，列每步的 factor、形状、消掉哪个变量。考试模板：</p>
+<pre>消 H₁: 涉及 {...} → product {vars} → sum H₁ → f₁(...)
+消 H₂: ...
+最终: ∏ remaining factors → normalize</pre>
+<p><b>2. 比较 ordering</b>：对两种 ordering，分别算最大中间 factor 的大小，挑小的。</p>
+<p><b>3. Factor 形状题</b>：给定 product 后 factor 的"标签"，问有多少 entries（看大写字母）。</p>
+<p><b>4. Polytree 上 VE 复杂度</b>：从叶子往根消，线性。</p>
+</div>
+
+<hr>
+
+<!-- ========================= LEC 16 ========================= -->
+<h2 id="l16">16. Sampling（近似推理）<span class="lec-tag">Lec 16</span></h2>
+
+<h3>16.1 动机 + 基础积木</h3>
+
+<p>VE 在大型 BN 上仍可能太贵。Sampling 用样本频率逼近概率：</p>
+<div class="formula-block">
+P(Q | e) ≈ (满足 e 的样本中 Q 取某值的数量) / (满足 e 的样本总数)
+</div>
+
+<h4>从离散分布采一个值</h4>
+<p>给 P(C) = {red: 0.6, green: 0.1, blue: 0.3}：</p>
+<ol>
+  <li>u = random() 抽 [0,1) 均匀样本</li>
+  <li>把 [0,1) 切成对应大小区间</li>
+  <li>u 落哪个区间就采到哪个值（如 u=0.83 → blue）</li>
+</ol>
+
+<p>下面方法都用同一个 <b>Sprinkler 网络</b>：</p>
+
+<div class="diagram">
+<svg viewBox="0 0 280 210" width="280">
+  <line class="edge-line" x1="140" y1="40" x2="80" y2="100" marker-end="url(#a2)"/>
+  <line class="edge-line" x1="140" y1="40" x2="200" y2="100" marker-end="url(#a2)"/>
+  <line class="edge-line" x1="80" y1="100" x2="140" y2="170" marker-end="url(#a2)"/>
+  <line class="edge-line" x1="200" y1="100" x2="140" y2="170" marker-end="url(#a2)"/>
+  <circle class="node-circle" cx="140" cy="40" r="24" fill="#ffe0b2"/><text class="node-text" x="140" y="40">C</text>
+  <circle class="node-circle" cx="80" cy="100" r="24" fill="#fff9c4"/><text class="node-text" x="80" y="100">S</text>
+  <circle class="node-circle" cx="200" cy="100" r="24" fill="#fff9c4"/><text class="node-text" x="200" y="100">R</text>
+  <circle class="node-circle" cx="140" cy="170" r="24" fill="#c8e6c9"/><text class="node-text" x="140" y="170">W</text>
+  <defs>
+    <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#555"/>
+    </marker>
+  </defs>
+</svg>
+<div class="diagram-caption">Cloudy → Sprinkler / Rain → WetGrass</div>
+</div>
+
+<pre>P(C):  c: 0.5,  ¬c: 0.5
+P(S|c):  s: 0.1, ¬s: 0.9     P(S|¬c): s: 0.5, ¬s: 0.5
+P(R|c):  r: 0.8, ¬r: 0.2     P(R|¬c): r: 0.2, ¬r: 0.8
+P(W|s,r): w: 0.99    P(W|s,¬r): w: 0.90
+P(W|¬s,r): w: 0.90   P(W|¬s,¬r): w: 0.01</pre>
+
+<h3>16.2 Prior Sampling</h3>
+
+<p>完全不看 evidence，按拓扑序按 CPT 采：</p>
+<pre>for X_i in topological_order:
+    sample x_i ~ P(X_i | parents(X_i))</pre>
+
+<h4>采一个样本</h4>
+<ol>
+  <li>C ~ P(C), u=0.37 → c</li>
+  <li>S ~ P(S|c)=[s:0.1, ¬s:0.9], u=0.42 → ¬s</li>
+  <li>R ~ P(R|c)=[r:0.8, ¬r:0.2], u=0.65 → r</li>
+  <li>W ~ P(W|¬s,r)=[w:0.9, ¬w:0.1], u=0.21 → w</li>
+</ol>
+<p>样本：(c, ¬s, r, w)。</p>
+
+<div class="good">
+<b>Consistency</b>：样本产生概率 = ∏ P(x<sub>i</sub> | parents) = joint distribution → 频率收敛真概率。
+</div>
+
+<div class="warn">
+<b>局限</b>：估不了条件概率（不带 evidence）。
+</div>
+
+<h3>16.3 Rejection Sampling</h3>
+
+<p>Prior sampling + 早期拒绝不符 evidence 的样本：</p>
+<pre>for X_i in topological_order:
+    sample x_i ~ P(X_i | parents(X_i))
+    if X_i 是 evidence 且 x_i ≠ 观测值:
+        return REJECT</pre>
+
+<p>用被接受的样本数频率估 P(Q | e)。</p>
+
+<div class="warn">
+<b>致命问题</b>：evidence 罕见时拒绝率爆炸。P(e)=0.001 → 1000 个样本只接受 1 个。
+</div>
+
+<h3>16.4 Likelihood Weighting ⭐ 重点</h3>
+
+<p><b>核心想法</b>：别扔样本！强行让 evidence 取观测值，用权重修正"作弊"。</p>
+
+<pre>w = 1.0
+for X_i in topological_order:
+    if X_i 是 evidence:
+        x_i = 观测值                       # 钉死
+        w *= P(x_i | parents(X_i))         # 累乘权重
+    else:
+        sample x_i ~ P(X_i | parents(X_i))</pre>
+
+<h4>例：算 P(R | s, w)</h4>
+<ol>
+  <li>C: 采 → c</li>
+  <li>S evidence! 钉死 s。w *= P(s|c)=0.1 → w=0.1</li>
+  <li>R: 采 ~ P(R|c) → r</li>
+  <li>W evidence! 钉死 w。w *= P(w|s,r)=0.99 → w=0.099</li>
+</ol>
+<p>样本 (c, s, r, w), 权重 = 0.099</p>
+
+<h4>用加权样本估条件概率</h4>
+<div class="formula-block">
+P̂(Q=q | e) = (∑<sub>样本 Q=q</sub> w<sub>j</sub>) / (∑<sub>所有样本</sub> w<sub>j</sub>)
+</div>
+
+<h4>Consistency</h4>
+<p>未加权 ∏ P(z<sub>j</sub>|Pa) 缺 evidence CPTs；权重 w = ∏ P(e<sub>k</sub>|Pa(E<sub>k</sub>)) 恰好补上 → 加权概率 = P(z, e)。</p>
+
+<div class="warn">
+<b>致命弱点</b>：<b>上游变量看不到 evidence</b>。采 C 时还按 P(C) 采，没用 s。<br>
+Evidence 多/在叶子时，权重 ~ O(small<sup>k</sup>)，少数样本主导平均，方差极大。
+</div>
+
+<h3>16.5 Gibbs Sampling / MCMC ⭐⭐⭐</h3>
+
+<p><b>彻底换思路</b>：维护一个完整状态，每次<b>只重采一个变量</b>，慢慢游走。</p>
+
+<pre>初始化:
+    fix evidence 变量为观测值（永不变）
+    randomly initialize 其他变量
+
+repeat:
+    pick a non-evidence variable X_i
+    sample x_i' ~ P(X_i | all other variables 当前值)
+    update state[X_i] = x_i'
+    record state as a sample</pre>
+
+<div class="formula-block">
+<b>Markov Blanket</b>(X<sub>i</sub>) = parents + children + children's other parents (co-parents)<br>
+<br>
+P(X<sub>i</sub> | all others) = P(X<sub>i</sub> | MB(X<sub>i</sub>))<br>
+&nbsp;&nbsp;&nbsp; ∝ P(X<sub>i</sub> | Pa(X<sub>i</sub>)) · ∏<sub>C ∈ children(X<sub>i</sub>)</sub> P(C | Pa(C))
+</div>
+
+<div class="diagram">
+<svg viewBox="0 0 320 200" width="320">
+  <circle class="node-circle" cx="100" cy="40" r="20" fill="#bbdefb"/><text class="node-text" x="100" y="40">P₁</text>
+  <circle class="node-circle" cx="220" cy="40" r="20" fill="#bbdefb"/><text class="node-text" x="220" y="40">P₂</text>
+  <circle class="node-circle" cx="160" cy="100" r="22" fill="#ffe082"/><text class="node-text" x="160" y="100">X</text>
+  <circle class="node-circle" cx="80" cy="160" r="20" fill="#c8e6c9"/><text class="node-text" x="80" y="160">C₁</text>
+  <circle class="node-circle" cx="240" cy="160" r="20" fill="#c8e6c9"/><text class="node-text" x="240" y="160">C₂</text>
+  <circle class="node-circle" cx="40" cy="100" r="18" fill="#fce4ec"/><text class="node-text" x="40" y="100" font-size="11">O₁</text>
+  <circle class="node-circle" cx="280" cy="100" r="18" fill="#fce4ec"/><text class="node-text" x="280" y="100" font-size="11">O₂</text>
+  <line class="edge-line" x1="105" y1="55" x2="150" y2="85" marker-end="url(#a3)"/>
+  <line class="edge-line" x1="215" y1="55" x2="170" y2="85" marker-end="url(#a3)"/>
+  <line class="edge-line" x1="150" y1="118" x2="90" y2="145" marker-end="url(#a3)"/>
+  <line class="edge-line" x1="170" y1="118" x2="230" y2="145" marker-end="url(#a3)"/>
+  <line class="edge-line" x1="50" y1="115" x2="75" y2="145" marker-end="url(#a3)"/>
+  <line class="edge-line" x1="270" y1="115" x2="245" y2="145" marker-end="url(#a3)"/>
+  <defs>
+    <marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#555"/>
+    </marker>
+  </defs>
+</svg>
+<div class="diagram-caption">MB(X) = {P₁, P₂, C₁, C₂, O₁, O₂}：父 + 子 + 子的另一对父。给定 MB，X d-separated from 网络其他部分。</div>
+</div>
+
+<h4>例：P(R | s, w) 上跑 Gibbs（Sprinkler 网络）</h4>
+
+<p>计算两个 MB：</p>
+<ul>
+  <li>MB(C) = {S, R}; P(C | s, R) ∝ P(C) · P(s|C) · P(R|C)</li>
+  <li>MB(R) = {C, S, W}; P(R | C, s, w) ∝ P(R|C) · P(w|s, R)</li>
+</ul>
+
+<p>初始 (c, s, r, w)。重采 C：</p>
+<ul>
+  <li>P(c|s,r) ∝ 0.5 · 0.1 · 0.8 = 0.04</li>
+  <li>P(¬c|s,r) ∝ 0.5 · 0.5 · 0.2 = 0.05</li>
+  <li>Normalize: P(c|s,r) ≈ 0.444, P(¬c|s,r) ≈ 0.556</li>
+</ul>
+
+<h4>Consistency</h4>
+<p>每步是 Markov chain 转移 π<sub>t+1</sub> = Kπ<sub>t</sub>。Equilibrium Kπ = π，唯一不动点是 π = P(· | e)。条件：chain ergodic（CPTs ∈ (0,1)）。</p>
+
+<div class="good">
+✅ Evidence 影响<b>所有</b>变量（通过 MB 全局影响）<br>
+✅ 大型 BN 实战首选（BUGS, JAGS, STAN）<br>
+❌ 需要 burn-in 扔掉前期样本<br>
+❌ 样本相关（不独立）<br>
+❌ Deterministic CPT 时收敛慢
+</div>
+
+<h3>16.6 四方法对比</h3>
+
+<table>
+<tr><th>方法</th><th>怎么采</th><th>用 evidence</th><th>样本独立</th><th>主要缺点</th></tr>
+<tr><td><b>Prior</b></td><td>拓扑序按 CPT 采</td><td>❌</td><td>✅</td><td>估不了条件概率</td></tr>
+<tr><td><b>Rejection</b></td><td>Prior + 扔不符的</td><td>✅ 但浪费</td><td>✅</td><td>Evidence 罕见时大量被拒</td></tr>
+<tr><td><b>LW</b></td><td>Evidence 钉死，乘权重</td><td>✅ 只影响下游</td><td>✅</td><td>上游瞎采、权重退化</td></tr>
+<tr><td><b>Gibbs</b></td><td>局部重采，看 MB</td><td>✅ 全部</td><td>❌ 相关</td><td>需 burn-in</td></tr>
+</table>
+
+<div class="quiz">
+<b>📝 高频考点 · Lec 16</b>
+<p><b>1. 跑几步采样</b>：给随机数让你模拟。Prior/Rejection 直接按 CPT 区间映射；LW 累乘权重；Gibbs 按 MB 重采。</p>
+<p><b>2. 算 LW 权重</b>：w = ∏<sub>e ∈ evidence</sub> P(e | parents(E))。给采样轨迹直接乘。</p>
+<p><b>3. 写 Markov Blanket</b>：parents + children + co-parents。</p>
+<p><b>4. 写 Gibbs 重采分布</b>：P(X | MB) ∝ P(X | Pa(X)) · ∏<sub>C ∈ Ch(X)</sub> P(C | Pa(C))。代入当前状态，normalize。</p>
+<p><b>5. 判断方法适配</b>：evidence 多/在叶子 → Gibbs；evidence 罕见 → 不能 rejection；要估条件 → 不能 prior。</p>
+</div>
+
+<hr>
+
+<!-- ========================= LEC 17 ========================= -->
+<h2 id="l17">17. Markov Models · HMMs · Forward · Viterbi <span class="lec-tag">Lec 17</span></h2>
+
+<h3>17.1 Markov Model 定义</h3>
+
+<p>把一个变量随时间复制成一串：X<sub>0</sub> → X<sub>1</sub> → X<sub>2</sub> → ...。每个 X<sub>t</sub> 是 t 时刻的<b>状态</b>。</p>
+
+<div class="formula-block">
+<b>Markov Property</b>（memoryless）：未来只依赖现在，不依赖过去<br>
+X<sub>t+1</sub> ⊥ {X<sub>0</sub>,...,X<sub>t-1</sub>} | X<sub>t</sub><br>
+<br>
+<b>Stationarity</b>：P(X<sub>t+1</sub> | X<sub>t</sub>) 对所有 t 相同（只需一张转移表）<br>
+<br>
+<b>Joint</b>：P(X<sub>0</sub>,...,X<sub>T</sub>) = P(X<sub>0</sub>) · ∏<sub>t=1..T</sub> P(X<sub>t</sub> | X<sub>t-1</sub>)
+</div>
+
+<div class="diagram">
+<svg viewBox="0 0 360 60" width="360">
+  <circle class="node-circle" cx="40" cy="30" r="20" fill="#fff"/><text class="node-text" x="40" y="30">X₀</text>
+  <circle class="node-circle" cx="120" cy="30" r="20" fill="#fff"/><text class="node-text" x="120" y="30">X₁</text>
+  <circle class="node-circle" cx="200" cy="30" r="20" fill="#fff"/><text class="node-text" x="200" y="30">X₂</text>
+  <circle class="node-circle" cx="280" cy="30" r="20" fill="#fff"/><text class="node-text" x="280" y="30">X₃</text>
+  <text class="node-text" x="340" y="30">...</text>
+  <line class="edge-line" x1="60" y1="30" x2="100" y2="30" marker-end="url(#a4)"/>
+  <line class="edge-line" x1="140" y1="30" x2="180" y2="30" marker-end="url(#a4)"/>
+  <line class="edge-line" x1="220" y1="30" x2="260" y2="30" marker-end="url(#a4)"/>
+  <line class="edge-line" x1="300" y1="30" x2="325" y2="30" marker-end="url(#a4)"/>
+  <defs>
+    <marker id="a4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#555"/>
+    </marker>
+  </defs>
+</svg>
+<div class="diagram-caption">Markov chain：每步只看前一步。</div>
+</div>
+
+<h4>例：天气</h4>
+<pre>P(X_0):  sun: 0.5,  rain: 0.5
+
+P(X_t | X_{t-1}):
+  X_{t-1}=sun:  X_t=sun 0.9,  X_t=rain 0.1
+  X_{t-1}=rain: X_t=sun 0.3,  X_t=rain 0.7</pre>
+
+<h3>17.2 Mini-Forward Algorithm ⭐</h3>
+
+<p><b>问题</b>：不给 evidence，只问 P(X<sub>t</sub>)。朴素办法 O(d<sup>T</sup>) 指数；递推 O(T·d²)。</p>
+
+<div class="formula-block">
+P(X<sub>t+1</sub>) = ∑<sub>x<sub>t</sub></sub> P(X<sub>t+1</sub> | x<sub>t</sub>) · P(x<sub>t</sub>)
+</div>
+
+<p><b>直觉</b>：对每个当前状态 x<sub>t</sub>，按转移概率推到下一时刻，加权求和。</p>
+
+<h4>走一遍（textbook 数字：P(W₀)=[sun:0.8, rain:0.2]，sun→sun:0.6, rain→rain:0.9）</h4>
+<table>
+<tr><th>t</th><th>P(sun)</th><th>P(rain)</th></tr>
+<tr><td>0</td><td>0.8</td><td>0.2</td></tr>
+<tr><td>1</td><td>0.6·0.8 + 0.1·0.2 = 0.5</td><td>0.4·0.8 + 0.9·0.2 = 0.5</td></tr>
+<tr><td>2</td><td>0.6·0.5 + 0.1·0.5 = 0.35</td><td>0.4·0.5 + 0.9·0.5 = 0.65</td></tr>
+<tr><td>3</td><td>0.275</td><td>0.725</td></tr>
+<tr><td>∞</td><td>0.2</td><td>0.8</td></tr>
+</table>
+
+<h4>矩阵形式</h4>
+<p>P(X<sub>t</sub>) 列向量 p<sub>t</sub>，转移矩阵 T<sub>ij</sub> = P(X<sub>t</sub>=j | X<sub>t-1</sub>=i)：</p>
+<div class="formula-block">
+p<sub>t+1</sub> = T<sup>T</sup> · p<sub>t</sub>
+</div>
+
+<h3>17.3 Stationary Distribution ⭐</h3>
+
+<p>随 t → ∞，P(X<sub>t</sub>) 收敛到 P<sub>∞</sub>（与初始分布无关，ergodic 条件下）：</p>
+<div class="formula-block">
+P<sub>∞</sub>(x') = ∑<sub>x</sub> P(x' | x) · P<sub>∞</sub>(x) &nbsp;&nbsp; 且 &nbsp; ∑ P<sub>∞</sub> = 1
+</div>
+
+<h4>解法（textbook 例：sun→sun 0.6, rain→sun 0.1）</h4>
+<p>设 x = P(sun), y = P(rain) = 1−x：</p>
+<pre>0.6x + 0.1(1−x) = x
+0.5x + 0.1 = x
+0.1 = 0.5x
+x = 0.2</pre>
+<p>→ P<sub>∞</sub> = (sun: 0.2, rain: 0.8)。</p>
+
+<div class="good">
+<b>Ergodic 条件</b>：connected + aperiodic。所有转移概率严格在 (0,1) 之间就够。<br>
+<b>应用</b>：Google PageRank（网页跳转 Markov chain，stationary = "重要性"）。
+</div>
+
+<h4>关于 diffusion 直觉（Ghostbusters）</h4>
+<table>
+<tr><th>Transition 类型</th><th>没 evidence 时 belief 演化</th></tr>
+<tr><td>随机 (到 neighbor)</td><td>概率质量扩散 → 趋向均匀，<b>不确定性增加</b></td></tr>
+<tr><td>确定 (沿环走)</td><td>belief 平移/旋转，<b>形状不变</b>（chain periodic，不收敛）</td></tr>
+</table>
+
+<h3>17.4 Hidden Markov Models (HMM)</h3>
+
+<p>真实场景：state 通常不可直接观察，只能通过<b>带噪 sensor</b> 间接观测。</p>
+
+<div class="diagram">
+<svg viewBox="0 0 380 160" width="380">
+  <!-- States -->
+  <circle class="node-circle" cx="60" cy="40" r="22" fill="#bbdefb"/><text class="node-text" x="60" y="40">X₀</text>
+  <circle class="node-circle" cx="140" cy="40" r="22" fill="#bbdefb"/><text class="node-text" x="140" y="40">X₁</text>
+  <circle class="node-circle" cx="220" cy="40" r="22" fill="#bbdefb"/><text class="node-text" x="220" y="40">X₂</text>
+  <circle class="node-circle" cx="300" cy="40" r="22" fill="#bbdefb"/><text class="node-text" x="300" y="40">X₃</text>
+  <!-- Evidence -->
+  <circle class="node-circle" cx="140" cy="120" r="22" fill="#fff9c4"/><text class="node-text" x="140" y="120">E₁</text>
+  <circle class="node-circle" cx="220" cy="120" r="22" fill="#fff9c4"/><text class="node-text" x="220" y="120">E₂</text>
+  <circle class="node-circle" cx="300" cy="120" r="22" fill="#fff9c4"/><text class="node-text" x="300" y="120">E₃</text>
+  <!-- Transitions -->
+  <line class="edge-line" x1="82" y1="40" x2="118" y2="40" marker-end="url(#a5)"/>
+  <line class="edge-line" x1="162" y1="40" x2="198" y2="40" marker-end="url(#a5)"/>
+  <line class="edge-line" x1="242" y1="40" x2="278" y2="40" marker-end="url(#a5)"/>
+  <!-- Sensor -->
+  <line class="edge-line" x1="140" y1="62" x2="140" y2="98" marker-end="url(#a5)"/>
+  <line class="edge-line" x1="220" y1="62" x2="220" y2="98" marker-end="url(#a5)"/>
+  <line class="edge-line" x1="300" y1="62" x2="300" y2="98" marker-end="url(#a5)"/>
+  <defs>
+    <marker id="a5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#555"/>
+    </marker>
+  </defs>
+</svg>
+<div class="diagram-caption">HMM：隐藏状态 X 链 + 每步一个观测 E。X 之间是转移，X→E 是 sensor。</div>
+</div>
+
+<div class="formula-block">
+HMM 由三件套定义：<br>
+• <b>Initial</b>: P(X<sub>0</sub>)<br>
+• <b>Transition</b>: P(X<sub>t</sub> | X<sub>t-1</sub>) （stationary）<br>
+• <b>Sensor</b>: P(E<sub>t</sub> | X<sub>t</sub>) （stationary）<br>
+<br>
+<b>Joint</b>: P(X<sub>0:T</sub>, E<sub>1:T</sub>) = P(X<sub>0</sub>) · ∏<sub>t=1..T</sub> P(X<sub>t</sub>|X<sub>t-1</sub>) P(E<sub>t</sub>|X<sub>t</sub>)
+</div>
+
+<h4>HMM 关键独立性</h4>
+<ul>
+  <li><b>未来 ⊥ 过去 | 现在</b>：X<sub>t+1</sub> ⊥ X<sub>0:t-1</sub> | X<sub>t</sub></li>
+  <li><b>当前观测 ⊥ 其他一切 | 当前状态</b>：E<sub>t</sub> ⊥ rest | X<sub>t</sub></li>
+  <li>注意：E 之间<b>不</b>独立（通过共享 X 链相关）</li>
+</ul>
+
+<h4>四种推理任务</h4>
+<table>
+<tr><th>任务</th><th>定义</th><th>用途</th></tr>
+<tr><td><b>Filtering</b></td><td>P(X<sub>t</sub> | e<sub>1:t</sub>)</td><td>当前 belief state（最常考）</td></tr>
+<tr><td><b>Prediction</b></td><td>P(X<sub>t+k</sub> | e<sub>1:t</sub>), k&gt;0</td><td>未来状态预测</td></tr>
+<tr><td><b>Smoothing</b></td><td>P(X<sub>k</sub> | e<sub>1:t</sub>), k&lt;t</td><td>用未来 evidence 修正过去</td></tr>
+<tr><td><b>Most Likely Explanation</b></td><td>argmax<sub>x<sub>1:t</sub></sub> P(x<sub>1:t</sub> | e<sub>1:t</sub>)</td><td>最佳状态序列（Viterbi）</td></tr>
+</table>
+
+<h3>17.5 Forward Algorithm（Filtering）⭐⭐⭐</h3>
+
+<p>维护 belief <b>B(X<sub>t</sub>) = P(X<sub>t</sub> | e<sub>1:t</sub>)</b>。每个时间步两个动作：</p>
+
+<div class="formula-block">
+<b>Step 1 - Time Elapse (Predict)</b>：incorporate transition<br>
+B'(X<sub>t+1</sub>) = ∑<sub>x<sub>t</sub></sub> P(X<sub>t+1</sub> | x<sub>t</sub>) · B(x<sub>t</sub>)<br>
+<br>
+<b>Step 2 - Observation Update</b>：incorporate evidence<br>
+B(X<sub>t+1</sub>) ∝ P(e<sub>t+1</sub> | X<sub>t+1</sub>) · B'(X<sub>t+1</sub>)<br>
+<br>
+<b>合起来</b>：B(X<sub>t+1</sub>) ∝ P(e<sub>t+1</sub> | X<sub>t+1</sub>) · ∑<sub>x<sub>t</sub></sub> P(X<sub>t+1</sub> | x<sub>t</sub>) · B(x<sub>t</sub>)
+</div>
+
+<div class="note">
+<b>两阶段的角色</b>：
+<ul>
+  <li>Time elapse 让 belief 因 transition 扩散 → 信息变模糊</li>
+  <li>Observation update 让 belief 因 evidence 集中 → 信息变 sharp</li>
+  <li>两者<b>互相拉扯</b>：transition 让你忘记，observation 让你想起来</li>
+</ul>
+</div>
+
+<h4>完整推导（B(W<sub>t</sub>) → B(W<sub>t+1</sub>)）</h4>
+<p>从 marginal + chain rule + HMM 独立性：</p>
+<pre>P(X_{t+1} | e_{1:t+1})
+  = α P(e_{t+1} | X_{t+1}, e_{1:t}) P(X_{t+1} | e_{1:t})    [Bayes]
+  = α P(e_{t+1} | X_{t+1}) P(X_{t+1} | e_{1:t})              [E_{t+1} ⊥ e_{1:t} | X_{t+1}]
+  = α P(e_{t+1} | X_{t+1}) ∑_x_t P(X_{t+1} | x_t) P(x_t | e_{1:t})    [condition on x_t]</pre>
+
+<h4>走例：天气 HMM</h4>
+<pre>P(W_0) = [sun: 0.5, rain: 0.5]
+Transition: P(W_t | W_{t-1})
+  sun → sun 0.9,  sun → rain 0.1
+  rain → sun 0.3, rain → rain 0.7
+Sensor: P(U_t | W_t)
+  sun:  U=true 0.2, U=false 0.8
+  rain: U=true 0.9, U=false 0.1</pre>
+
+<table>
+<tr><th>步</th><th>动作</th><th>B(sun)</th><th>B(rain)</th></tr>
+<tr><td>t=0</td><td>初始</td><td>0.5</td><td>0.5</td></tr>
+<tr><td>t=1 predict</td><td>B'(W₁) = 0.5·[0.9,0.1] + 0.5·[0.3,0.7]</td><td>0.6</td><td>0.4</td></tr>
+<tr><td>t=1 update u₁=T</td><td>·P(U=T|W) = 0.6·0.2, 0.4·0.9</td><td>0.12 → 0.25</td><td>0.36 → 0.75</td></tr>
+<tr><td>t=2 predict</td><td>0.25·[0.9,0.1] + 0.75·[0.3,0.7]</td><td>0.45</td><td>0.55</td></tr>
+<tr><td>t=2 update u₂=T</td><td>0.45·0.2, 0.55·0.9</td><td>0.09 → 0.154</td><td>0.495 → 0.846</td></tr>
+</table>
+
+<p>每步先 predict 再 update，update 后 normalize（除以 ∑）。Normalize 可以延后到最后一次性做。</p>
+
+<h4>矩阵形式</h4>
+<div class="formula-block">
+f<sub>1:t+1</sub> = α · O<sub>t+1</sub> · T<sup>T</sup> · f<sub>1:t</sub>
+</div>
+<p>其中 T 是 transition matrix，O<sub>t</sub> 是 sensor matrix（diagonal: P(e<sub>t</sub> | X) for each X）。每步 O(|X|²)。</p>
+
+<h3>17.6 Viterbi Algorithm（Most Likely Explanation）⭐⭐⭐</h3>
+
+<p><b>问题</b>：找最可能的<b>状态序列</b>（不是某时刻的边缘分布）：</p>
+<div class="formula-block">
+argmax<sub>x<sub>1:T</sub></sub> P(x<sub>1:T</sub> | e<sub>1:T</sub>) = argmax P(x<sub>1:T</sub>, e<sub>1:T</sub>)<br>
+&nbsp; &nbsp; = argmax P(x<sub>0</sub>) · ∏<sub>t</sub> P(x<sub>t</sub> | x<sub>t-1</sub>) P(e<sub>t</sub> | x<sub>t</sub>)
+</div>
+
+<h4>State trellis（关键可视化）</h4>
+
+<div class="diagram">
+<svg viewBox="0 0 360 180" width="360">
+  <text x="40" y="25" font-size="11" fill="#555">X₀</text>
+  <text x="120" y="25" font-size="11" fill="#555">X₁</text>
+  <text x="200" y="25" font-size="11" fill="#555">X₂</text>
+  <text x="280" y="25" font-size="11" fill="#555">X₃</text>
+  <!-- sun row -->
+  <circle class="node-circle" cx="40" cy="60" r="18" fill="#fff9c4"/><text class="node-text" x="40" y="60" font-size="11">sun</text>
+  <circle class="node-circle" cx="120" cy="60" r="18" fill="#fff9c4"/><text class="node-text" x="120" y="60" font-size="11">sun</text>
+  <circle class="node-circle" cx="200" cy="60" r="18" fill="#fff9c4"/><text class="node-text" x="200" y="60" font-size="11">sun</text>
+  <circle class="node-circle" cx="280" cy="60" r="18" fill="#fff9c4"/><text class="node-text" x="280" y="60" font-size="11">sun</text>
+  <!-- rain row -->
+  <circle class="node-circle" cx="40" cy="140" r="18" fill="#bbdefb"/><text class="node-text" x="40" y="140" font-size="11">rain</text>
+  <circle class="node-circle" cx="120" cy="140" r="18" fill="#bbdefb"/><text class="node-text" x="120" y="140" font-size="11">rain</text>
+  <circle class="node-circle" cx="200" cy="140" r="18" fill="#bbdefb"/><text class="node-text" x="200" y="140" font-size="11">rain</text>
+  <circle class="node-circle" cx="280" cy="140" r="18" fill="#bbdefb"/><text class="node-text" x="280" y="140" font-size="11">rain</text>
+  <!-- transitions all-to-all -->
+  <line class="edge-line" x1="58" y1="60" x2="102" y2="60" stroke="#aaa"/>
+  <line class="edge-line" x1="58" y1="60" x2="102" y2="140" stroke="#aaa"/>
+  <line class="edge-line" x1="58" y1="140" x2="102" y2="60" stroke="#aaa"/>
+  <line class="edge-line" x1="58" y1="140" x2="102" y2="140" stroke="#aaa"/>
+  <line class="edge-line" x1="138" y1="60" x2="182" y2="60" stroke="#aaa"/>
+  <line class="edge-line" x1="138" y1="60" x2="182" y2="140" stroke="#aaa"/>
+  <line class="edge-line" x1="138" y1="140" x2="182" y2="60" stroke="#aaa"/>
+  <line class="edge-line" x1="138" y1="140" x2="182" y2="140" stroke="#aaa"/>
+  <line class="edge-line" x1="218" y1="60" x2="262" y2="60" stroke="#aaa"/>
+  <line class="edge-line" x1="218" y1="60" x2="262" y2="140" stroke="#aaa"/>
+  <line class="edge-line" x1="218" y1="140" x2="262" y2="60" stroke="#aaa"/>
+  <line class="edge-line" x1="218" y1="140" x2="262" y2="140" stroke="#aaa"/>
+  <!-- best path highlighted -->
+  <line x1="58" y1="140" x2="102" y2="140" stroke="#c0392b" stroke-width="3"/>
+  <line x1="138" y1="140" x2="182" y2="60" stroke="#c0392b" stroke-width="3"/>
+  <line x1="218" y1="60" x2="262" y2="60" stroke="#c0392b" stroke-width="3"/>
+</svg>
+<div class="diagram-caption">State trellis：每列一个时间步，每个状态一行。<span style="color:#c0392b">红色</span> = 最佳路径（Viterbi 找的就是这条）。每条边权重 = P(x<sub>t</sub>|x<sub>t-1</sub>) · P(e<sub>t</sub>|x<sub>t</sub>)。</div>
+</div>
+
+<h4>Forward 与 Viterbi 对比</h4>
+<table>
+<tr><th></th><th>Forward (filtering)</th><th>Viterbi (MLE)</th></tr>
+<tr><td>问题</td><td>P(X<sub>t</sub> | e<sub>1:t</sub>)</td><td>argmax P(x<sub>1:t</sub> | e<sub>1:t</sub>)</td></tr>
+<tr><td>聚合操作</td><td>∑ (求所有路径的和)</td><td>max (找最佳路径)</td></tr>
+<tr><td>递归</td><td>f<sub>t+1</sub> = α·P(e<sub>t+1</sub>|X<sub>t+1</sub>)·∑<sub>x<sub>t</sub></sub> P(X<sub>t+1</sub>|x<sub>t</sub>)·f<sub>t</sub></td><td>m<sub>t+1</sub> = P(e<sub>t+1</sub>|X<sub>t+1</sub>)·max<sub>x<sub>t</sub></sub> P(X<sub>t+1</sub>|x<sub>t</sub>)·m<sub>t</sub></td></tr>
+<tr><td>记录</td><td>每个 state 的总概率</td><td>每个 state 的<b>最优路径</b>概率 + back-pointer</td></tr>
+</table>
+
+<h4>Viterbi 算法</h4>
+<pre>定义 m_t[x_t] = max_{x_{1:t-1}} P(x_{1:t}, e_{1:t})
+       a_t[x_t] = 来到 x_t 的最佳前置 state（back-pointer）
+
+前向 pass:
+    m_0[x_0] = P(x_0) · P(e_0 | x_0)
+    for t = 1, 2, ..., T:
+        for each state x_t:
+            m_t[x_t] = P(e_t | x_t) · max_{x_{t-1}} P(x_t | x_{t-1}) · m_{t-1}[x_{t-1}]
+            a_t[x_t] = argmax_{x_{t-1}} P(x_t | x_{t-1}) · m_{t-1}[x_{t-1}]
+
+后向 pass（回溯）:
+    x_T* = argmax_{x_T} m_T[x_T]
+    for t = T-1, T-2, ..., 0:
+        x_t* = a_{t+1}[x_{t+1}*]
+返回 x_{0:T}*</pre>
+
+<h4>复杂度</h4>
+<ul>
+  <li>时间：O(|X|² · T)</li>
+  <li>空间：O(|X| · T)（要存所有 back-pointer 才能回溯）</li>
+  <li>暴力枚举所有路径：O(|X|<sup>T</sup>) —— Viterbi 用 DP 把指数压成多项式</li>
+</ul>
+
+<div class="note">
+<b>Viterbi 本质 = breadth-first graph search on trellis</b>。在 negative log probability 空间，argmax ∏ = argmin ∑ → 变成最短路径问题。也可以用 A* 加速（如果有 admissible heuristic）。
+</div>
+
+<div class="quiz">
+<b>📝 高频考点 · Lec 17（必考）</b>
+
+<p><b>1. Mini-Forward 几步</b>：给 P(X₀) 和 transition table，手算 P(X₁), P(X₂), ...</p>
+
+<p><b>2. 解 Stationary Distribution</b>：列两个方程（守恒 + 总和=1），解一元一次方程。</p>
+
+<p><b>3. Forward Algorithm 一步</b>：给 B(X<sub>t</sub>), transition, sensor, e<sub>t+1</sub>，求 B(X<sub>t+1</sub>)。<b>套路</b>：</p>
+<pre>(a) Predict: B'(X_{t+1}) = ∑_x_t P(X_{t+1}|x_t) · B(x_t)     # 别 normalize
+(b) Update:  B(X_{t+1}) ∝ P(e_{t+1}|X_{t+1}) · B'(X_{t+1})
+(c) Normalize</pre>
+
+<p><b>4. Viterbi 一步</b>：给 m<sub>t</sub>, transition, sensor, e<sub>t+1</sub>，求 m<sub>t+1</sub> 和 back-pointer。<b>注意是 max 不是 ∑</b>。</p>
+
+<p><b>5. Forward vs Viterbi</b>：什么时候用哪个？filtering 用 forward（∑），最可能状态序列用 Viterbi（max）。<b>Filtering 给的不是 MLE 序列！</b>每个时刻边缘最大不等于整体序列最大。</p>
+
+<p><b>6. HMM 独立性</b>：判断 e<sub>i</sub> ⊥ e<sub>j</sub>？X<sub>i</sub> ⊥ X<sub>j</sub> | X<sub>k</sub>？用 d-separation 在展开的 HMM BN 上判。<b>注意</b>：E 之间一般不独立（通过 X 链相关）。</p>
+
+<p><b>7. Diffusion 直觉</b>：随机 transition → belief 扩散；确定 transition → belief 平移不变形。Time elapse 让 belief 模糊，observation 让 belief sharp。</p>
+</div>
+
+<hr>
+
+<!-- ========================= EXPANDED CHEAT SHEET ========================= -->
+<h2 id="cheat2">📋 期末 Cheat Sheet（Lec 13–17 + 期中精华）</h2>
+
+<h3>Bayes Net</h3>
+<div class="formula-block">
+<b>BN 因子化</b>：P(X₁,...,X<sub>n</sub>) = ∏ P(X<sub>i</sub> | Pa(X<sub>i</sub>))<br>
+<b>Local semantics</b>：X ⊥ non-descendants | Pa(X)<br>
+<b>CPT 自由参数</b>：∏ |Pa<sub>i</sub>| · (|X| − 1) per node
+</div>
+
+<h3>D-Separation</h3>
+<table>
+<tr><th>结构</th><th>Z 未观测</th><th>Z 被观测</th></tr>
+<tr><td>X→Z→Y</td><td>active</td><td>blocked</td></tr>
+<tr><td>X←Z→Y</td><td>active</td><td>blocked</td></tr>
+<tr><td>X→Z←Y (V)</td><td>blocked</td><td>active（或后代被观测时）</td></tr>
+</table>
+
+<h3>VE</h3>
+<pre>For each hidden H:
+    join factors mentioning H → product
+    sum out H → new factor
+最终: ∏ remaining → normalize</pre>
+<p>复杂度由最大中间 factor 决定。Polytree 线性。一般 BN #P-hard。</p>
+
+<h3>Sampling</h3>
+<div class="formula-block">
+<b>LW weight</b>：w = ∏<sub>e</sub> P(e<sub>k</sub> | Pa(E<sub>k</sub>))<br>
+<b>LW 估计</b>：P(q|e) ≈ ∑<sub>Q=q</sub> w<sub>j</sub> / ∑ w<sub>j</sub><br>
+<b>Markov Blanket</b>(X) = Pa(X) ∪ Ch(X) ∪ Pa(Ch(X)) \ {X}<br>
+<b>Gibbs 重采</b>：P(X | MB) ∝ P(X|Pa) · ∏<sub>C ∈ Ch(X)</sub> P(C | Pa(C))
+</div>
+
+<table>
+<tr><th>方法</th><th>用 evidence</th><th>缺点</th></tr>
+<tr><td>Prior</td><td>❌</td><td>估不了条件</td></tr>
+<tr><td>Rejection</td><td>扔不符的</td><td>evidence 罕见时浪费</td></tr>
+<tr><td>LW</td><td>下游影响</td><td>上游瞎采</td></tr>
+<tr><td>Gibbs</td><td>全局</td><td>burn-in + 相关</td></tr>
+</table>
+
+<h3>Markov Model</h3>
+<div class="formula-block">
+<b>Mini-Forward</b>：P(X<sub>t+1</sub>) = ∑<sub>x<sub>t</sub></sub> P(X<sub>t+1</sub> | x<sub>t</sub>) · P(x<sub>t</sub>)<br>
+<b>Stationary</b>：解 P<sub>∞</sub> = T<sup>T</sup> P<sub>∞</sub> + ∑P<sub>∞</sub>=1<br>
+矩阵：p<sub>t+1</sub> = T<sup>T</sup> p<sub>t</sub>
+</div>
+
+<h3>HMM Forward (Filtering)</h3>
+<div class="formula-block">
+<b>Predict</b>：B'(X<sub>t+1</sub>) = ∑<sub>x<sub>t</sub></sub> P(X<sub>t+1</sub> | x<sub>t</sub>) B(x<sub>t</sub>)<br>
+<b>Update</b>：B(X<sub>t+1</sub>) ∝ P(e<sub>t+1</sub> | X<sub>t+1</sub>) · B'(X<sub>t+1</sub>)<br>
+合：B(X<sub>t+1</sub>) ∝ P(e<sub>t+1</sub>|X<sub>t+1</sub>) · ∑<sub>x<sub>t</sub></sub> P(X<sub>t+1</sub>|x<sub>t</sub>) B(x<sub>t</sub>)
+</div>
+
+<h3>Viterbi (MLE 序列)</h3>
+<div class="formula-block">
+m<sub>t</sub>[x<sub>t</sub>] = P(e<sub>t</sub>|x<sub>t</sub>) · max<sub>x<sub>t-1</sub></sub> P(x<sub>t</sub>|x<sub>t-1</sub>) · m<sub>t-1</sub>[x<sub>t-1</sub>]<br>
+a<sub>t</sub>[x<sub>t</sub>] = argmax<sub>x<sub>t-1</sub></sub> P(x<sub>t</sub>|x<sub>t-1</sub>) · m<sub>t-1</sub>[x<sub>t-1</sub>]<br>
+返回时 backtrace from argmax<sub>x<sub>T</sub></sub> m<sub>T</sub>[x<sub>T</sub>]
+</div>
+
+<h3>期末易错点</h3>
+<ol>
+  <li><b>V-structure 反直觉</b>：未观测时独立；观测 collider 或其后代 → 激活</li>
+  <li><b>Factor 不是合法概率</b>：VE 中间产物可以加起来 ≠ 1</li>
+  <li><b>LW 上游不看 evidence</b>：上游变量按 prior 采，权重补在下游</li>
+  <li><b>Markov blanket 包括 co-parents</b>：children's other parents 别漏</li>
+  <li><b>Forward ≠ Viterbi</b>：filtering 给 marginal，Viterbi 给序列。每个时刻 argmax B(X<sub>t</sub>) <b>不等于</b> argmax 序列</li>
+  <li><b>HMM Forward 两阶段顺序</b>：predict 先 (transition), update 后 (sensor)</li>
+  <li><b>Mini-Forward vs Forward</b>：Mini 没 evidence，Forward 有 evidence + sensor 项</li>
+  <li><b>Stationary distribution 与初始无关</b>，但需要 ergodic（环就不 ergodic）</li>
+</ol>
 
 <hr>
 
