@@ -47,6 +47,25 @@
   .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
   @media (max-width: 700px) { .grid2 { grid-template-columns: 1fr; } body { padding: 16px; } }
   hr { border: none; border-top: 1px dashed #ccc; margin: 32px 0; }
+  /* Diagrams */
+  .diagram { background: #fff; border: 1px solid #ddd; border-radius: 6px; padding: 12px; margin: 12px 0; text-align: center; overflow-x: auto; }
+  .diagram svg { max-width: 100%; height: auto; }
+  .diagram-caption { font-size: 0.85em; color: var(--muted); margin-top: 6px; font-style: italic; }
+  .trace { width: 100%; font-size: 0.88em; }
+  .trace th { background: #e8edf2; }
+  .trace td.expand { background: #fff3a3; font-weight: 600; }
+  .trace code { font-size: 0.9em; }
+  /* SVG node styles */
+  .node-circle { fill: #fff; stroke: #0b5394; stroke-width: 2; }
+  .node-goal { fill: #c8e6c9; stroke: #2e7d32; stroke-width: 2.5; }
+  .node-start { fill: #ffe0b2; stroke: #e65100; stroke-width: 2.5; }
+  .node-text { font-family: -apple-system, sans-serif; font-size: 14px; text-anchor: middle; dominant-baseline: central; font-weight: 600; }
+  .edge-line { stroke: #555; stroke-width: 1.5; fill: none; }
+  .edge-label { font-family: -apple-system, sans-serif; font-size: 12px; fill: #c0392b; font-weight: 600; }
+  .h-label { font-family: -apple-system, sans-serif; font-size: 11px; fill: #1565c0; font-style: italic; }
+  .triangle-max { fill: #fff; stroke: #2e7d32; stroke-width: 2; }
+  .triangle-min { fill: #fff; stroke: #c0392b; stroke-width: 2; }
+  .pruned { stroke-dasharray: 4 3; opacity: 0.35; }
 </style>
 </head>
 <body>
@@ -146,6 +165,147 @@ A search problem = ⟨ <b>states</b>, <b>successor function</b> (action → (nex
 </table>
 <p style="font-size:0.9em;color:var(--muted)">b = 分支因子，m = 最大深度，s = 最浅解深度，C* = 最优代价，ε = 最小弧代价。</p>
 
+<h4>📊 示例图（贯穿 DFS / BFS / UCS / A* 走查）</h4>
+
+<div class="diagram">
+<svg viewBox="0 0 460 280" width="460">
+  <!-- Edges -->
+  <line class="edge-line" x1="80" y1="40" x2="40" y2="110"/>
+  <line class="edge-line" x1="80" y1="40" x2="120" y2="110"/>
+  <line class="edge-line" x1="80" y1="40" x2="200" y2="110"/>
+  <line class="edge-line" x1="40" y1="130" x2="40" y2="200"/>
+  <line class="edge-line" x1="120" y1="130" x2="100" y2="200"/>
+  <line class="edge-line" x1="120" y1="130" x2="160" y2="200"/>
+  <line class="edge-line" x1="200" y1="130" x2="200" y2="200"/>
+  <line class="edge-line" x1="40" y1="220" x2="100" y2="250"/>
+  <line class="edge-line" x1="160" y1="220" x2="220" y2="250"/>
+  <line class="edge-line" x1="200" y1="220" x2="240" y2="250"/>
+  <!-- Edge weights -->
+  <text class="edge-label" x="50" y="80">3</text>
+  <text class="edge-label" x="100" y="80">1</text>
+  <text class="edge-label" x="155" y="80">9</text>
+  <text class="edge-label" x="48" y="170">2</text>
+  <text class="edge-label" x="100" y="170">8</text>
+  <text class="edge-label" x="155" y="170">2</text>
+  <text class="edge-label" x="208" y="170">3</text>
+  <text class="edge-label" x="62" y="245">4</text>
+  <text class="edge-label" x="195" y="245">4</text>
+  <text class="edge-label" x="225" y="245">2</text>
+  <!-- Nodes -->
+  <circle class="node-start" cx="80" cy="30" r="18"/><text class="node-text" x="80" y="30">S</text>
+  <circle class="node-circle" cx="40" cy="120" r="16"/><text class="node-text" x="40" y="120">a</text>
+  <circle class="node-circle" cx="120" cy="120" r="16"/><text class="node-text" x="120" y="120">b</text>
+  <circle class="node-circle" cx="200" cy="120" r="16"/><text class="node-text" x="200" y="120">c</text>
+  <circle class="node-circle" cx="40" cy="210" r="16"/><text class="node-text" x="40" y="210">d</text>
+  <circle class="node-circle" cx="100" cy="210" r="16"/><text class="node-text" x="100" y="210">e</text>
+  <circle class="node-circle" cx="160" cy="210" r="16"/><text class="node-text" x="160" y="210">f</text>
+  <circle class="node-circle" cx="200" cy="210" r="16"/><text class="node-text" x="200" y="210">h</text>
+  <circle class="node-goal" cx="120" cy="260" r="18"/><text class="node-text" x="120" y="260">G</text>
+  <circle class="node-goal" cx="240" cy="260" r="18"/><text class="node-text" x="240" y="260">G</text>
+  <!-- Heuristic labels (for later A*) -->
+  <text class="h-label" x="62" y="125">h=8</text>
+  <text class="h-label" x="140" y="125">h=4</text>
+  <text class="h-label" x="222" y="125">h=4</text>
+  <text class="h-label" x="62" y="215">h=4</text>
+  <text class="h-label" x="80" y="215">h=2</text>
+  <text class="h-label" x="180" y="215">h=2</text>
+  <text class="h-label" x="222" y="215">h=4</text>
+  <text class="h-label" x="100" y="30">h=10</text>
+  <text class="h-label" x="100" y="280">h=0</text>
+  <text class="h-label" x="220" y="280">h=0</text>
+</svg>
+<div class="diagram-caption">起点 S（橙），目标 G（绿）。红字 = 弧代价；蓝字 = 启发式 h（A* 用，DFS/BFS/UCS 不用）。tie-break：按字母顺序（a&lt;b&lt;c）。</div>
+</div>
+
+<h4>🔍 DFS 走查（LIFO stack）</h4>
+
+<table class="trace">
+<tr><th>步</th><th>扩展</th><th>Fringe（栈顶在右）</th><th>说明</th></tr>
+<tr><td>0</td><td>—</td><td><code>[S]</code></td><td>初始</td></tr>
+<tr><td>1</td><td class="expand">S</td><td><code>[c, b, a]</code></td><td>S 的孩子按顺序 push，a 在栈顶（最后 push 的最先弹）</td></tr>
+<tr><td>2</td><td class="expand">a</td><td><code>[c, b, d]</code></td><td>a 只有 d 一个孩子</td></tr>
+<tr><td>3</td><td class="expand">d</td><td><code>[c, b]</code></td><td>d 是叶子，无孩子</td></tr>
+<tr><td>4</td><td class="expand">b</td><td><code>[c, f, e]</code></td><td>b 的孩子是 e, f</td></tr>
+<tr><td>5</td><td class="expand">e</td><td><code>[c, f, G]</code></td><td>e 的孩子是 G</td></tr>
+<tr><td>6</td><td class="expand">G</td><td>—</td><td>✅ 找到目标，返回路径 <code>S→b→e→G</code>，cost = 1+8+4 = <b>13</b></td></tr>
+</table>
+<p>DFS 找到的解 <b>不是最优</b>（真正最优是 <code>S→b→f→G</code>，cost = 1+2+4 = 7）。</p>
+
+<h4>🔍 BFS 走查（FIFO queue）</h4>
+
+<table class="trace">
+<tr><th>步</th><th>扩展</th><th>Fringe（队首在左）</th><th>说明</th></tr>
+<tr><td>0</td><td>—</td><td><code>[S]</code></td><td>初始</td></tr>
+<tr><td>1</td><td class="expand">S</td><td><code>[a, b, c]</code></td><td>按字母序入队</td></tr>
+<tr><td>2</td><td class="expand">a</td><td><code>[b, c, d]</code></td><td>d 入队尾</td></tr>
+<tr><td>3</td><td class="expand">b</td><td><code>[c, d, e, f]</code></td><td>e, f 入队尾</td></tr>
+<tr><td>4</td><td class="expand">c</td><td><code>[d, e, f, h]</code></td><td>h 入队尾</td></tr>
+<tr><td>5</td><td class="expand">d</td><td><code>[e, f, h]</code></td><td>叶子</td></tr>
+<tr><td>6</td><td class="expand">e</td><td><code>[f, h, G]</code></td><td>e→G 入队</td></tr>
+<tr><td>7</td><td class="expand">f</td><td><code>[h, G, G]</code></td><td>f→G 入队</td></tr>
+<tr><td>8</td><td class="expand">h</td><td><code>[G, G, G]</code></td><td>h→G 入队</td></tr>
+<tr><td>9</td><td class="expand">G</td><td>—</td><td>✅ 找到（队首那个是 e→G，cost=13）。注意 BFS 只看深度，不看代价。</td></tr>
+</table>
+
+<h4>🔍 UCS 走查（priority queue by g）</h4>
+
+<table class="trace">
+<tr><th>步</th><th>扩展（g）</th><th>Fringe（按 g 排序）</th></tr>
+<tr><td>0</td><td>—</td><td><code>[(S, 0)]</code></td></tr>
+<tr><td>1</td><td class="expand">S (0)</td><td><code>[(b,1), (a,3), (c,9)]</code></td></tr>
+<tr><td>2</td><td class="expand">b (1)</td><td><code>[(a,3), (f,3), (c,9), (e,9)]</code></td></tr>
+<tr><td>3</td><td class="expand">a (3)</td><td><code>[(f,3), (d,5), (c,9), (e,9)]</code></td></tr>
+<tr><td>4</td><td class="expand">f (3)</td><td><code>[(d,5), (G,7), (c,9), (e,9)]</code></td></tr>
+<tr><td>5</td><td class="expand">d (5)</td><td><code>[(G,7), (c,9), (e,9)]</code></td></tr>
+<tr><td>6</td><td class="expand">G (7)</td><td>✅ 返回最优路径 <code>S→b→f→G</code>, cost = <b>7</b></td></tr>
+</table>
+
+<div class="good">
+<b>对比小结</b>：
+<ul>
+<li>DFS 找到 cost=13 的解（不最优）</li>
+<li>BFS 找到的也是 cost=13（路径最短≠代价最低）</li>
+<li>UCS 找到 cost=7 的最优解</li>
+<li>三者扩展节点数：UCS 6 个，DFS 6 个，BFS 9 个 —— UCS 不一定更少，但<b>保证最优</b></li>
+</ul>
+</div>
+
+<details>
+<summary>📐 视觉化：UCS 的"等代价轮廓"</summary>
+<div class="diagram">
+<svg viewBox="0 0 320 200" width="340">
+  <!-- contour ellipses -->
+  <ellipse cx="60" cy="100" rx="20" ry="20" fill="#bbdefb" opacity="0.6"/>
+  <ellipse cx="60" cy="100" rx="50" ry="40" fill="none" stroke="#1565c0" stroke-dasharray="3 3"/>
+  <ellipse cx="60" cy="100" rx="80" ry="65" fill="none" stroke="#1565c0" stroke-dasharray="3 3"/>
+  <ellipse cx="60" cy="100" rx="110" ry="85" fill="none" stroke="#1565c0" stroke-dasharray="3 3"/>
+  <circle class="node-start" cx="60" cy="100" r="16"/><text class="node-text" x="60" y="100">S</text>
+  <circle class="node-goal" cx="240" cy="100" r="16"/><text class="node-text" x="240" y="100">G</text>
+  <text class="edge-label" x="85" y="55">c≤1</text>
+  <text class="edge-label" x="115" y="40">c≤2</text>
+  <text class="edge-label" x="150" y="25">c≤3</text>
+</svg>
+<div class="diagram-caption">UCS 像水波一样从 S 均匀向外扩散，"每个方向都试"。没有 goal 方向信息 → 浪费很多扩展。</div>
+</div>
+</details>
+
+<details>
+<summary>📐 视觉化：A* 的"等 f 轮廓"</summary>
+<div class="diagram">
+<svg viewBox="0 0 320 200" width="340">
+  <!-- contour ovals biased toward goal -->
+  <ellipse cx="80" cy="100" rx="22" ry="18" fill="#c8e6c9" opacity="0.6"/>
+  <ellipse cx="100" cy="100" rx="55" ry="32" fill="none" stroke="#2e7d32" stroke-dasharray="3 3"/>
+  <ellipse cx="130" cy="100" rx="90" ry="45" fill="none" stroke="#2e7d32" stroke-dasharray="3 3"/>
+  <ellipse cx="155" cy="100" rx="115" ry="55" fill="none" stroke="#2e7d32" stroke-dasharray="3 3"/>
+  <circle class="node-start" cx="60" cy="100" r="16"/><text class="node-text" x="60" y="100">S</text>
+  <circle class="node-goal" cx="250" cy="100" r="16"/><text class="node-text" x="250" y="100">G</text>
+  <text class="edge-label" x="160" y="40">f=g+h</text>
+</svg>
+<div class="diagram-caption">A* 的 f 等值线被 h "拉向目标"，主要朝 G 方向扩展，但仍保留全局信息保证最优。</div>
+</div>
+</details>
+
 <h3>2.4 Iterative Deepening</h3>
 <p>结合 DFS 的空间优势和 BFS 的浅层优势：依次跑 depth-limit = 1, 2, 3, ... 的 DFS。看似浪费，但最深层占大部分工作，整体仍 O(b<sup>d</sup>)。</p>
 
@@ -189,6 +349,45 @@ A search problem = ⟨ <b>states</b>, <b>successor function</b> (action → (nex
 <h3>3.3 A* 何时终止？</h3>
 <div class="warn">
 只在 <b>dequeue goal</b> 时停，不能在 enqueue goal 时停。否则可能错过更优路径。
+</div>
+
+<h4>🔍 A* 走查（用 Lec 2 的同一张图，h 见蓝字）</h4>
+
+<table class="trace">
+<tr><th>步</th><th>扩展 (f = g+h)</th><th>Fringe（按 f 排序）</th><th>说明</th></tr>
+<tr><td>0</td><td>—</td><td><code>[(S, f=0+10=10)]</code></td><td>初始</td></tr>
+<tr><td>1</td><td class="expand">S</td><td><code>[(b, 1+4=5), (a, 3+8=11), (c, 9+4=13)]</code></td><td>b 的 f 最小，优先</td></tr>
+<tr><td>2</td><td class="expand">b</td><td><code>[(f, 3+2=5), (e, 9+2=11), (a, 11), (c, 13)]</code></td><td>f 和 b 并列最小，按字母 f 先（视约定）</td></tr>
+<tr><td>3</td><td class="expand">f</td><td><code>[(G, 7+0=7), (e, 11), (a, 11), (c, 13)]</code></td><td>G 入队</td></tr>
+<tr><td>4</td><td class="expand">G</td><td>—</td><td>✅ G dequeued，返回 <code>S→b→f→G</code>, cost = <b>7</b>（最优）</td></tr>
+</table>
+
+<p>A* 只扩展了 <b>3 个非目标节点</b>（vs UCS 5 个，BFS 8 个）—— h 把搜索"导向"目标。</p>
+
+<div class="note">
+<b>关键观察</b>：a 和 c 永远没被扩展。因为 h 告诉我们"经过 a/c 太绕"，f 值始终比经过 b 的路径大。这就是 h 的"剪枝"威力。
+</div>
+
+<h4>🔍 A* 错误终止 vs 正确终止</h4>
+
+<div class="diagram">
+<svg viewBox="0 0 360 200" width="360">
+  <circle class="node-start" cx="40" cy="100" r="18"/><text class="node-text" x="40" y="100">S</text>
+  <circle class="node-circle" cx="140" cy="50" r="16"/><text class="node-text" x="140" y="50">A</text>
+  <circle class="node-circle" cx="140" cy="150" r="16"/><text class="node-text" x="140" y="150">B</text>
+  <circle class="node-goal" cx="280" cy="100" r="18"/><text class="node-text" x="280" y="100">G</text>
+  <line class="edge-line" x1="55" y1="92" x2="125" y2="55"/>
+  <line class="edge-line" x1="55" y1="108" x2="125" y2="145"/>
+  <line class="edge-line" x1="155" y1="55" x2="265" y2="92"/>
+  <line class="edge-line" x1="155" y1="145" x2="265" y2="108"/>
+  <text class="edge-label" x="80" y="60">2</text>
+  <text class="edge-label" x="80" y="145">3</text>
+  <text class="edge-label" x="210" y="60">2</text>
+  <text class="edge-label" x="210" y="145">2</text>
+  <text class="h-label" x="140" y="30">h=2</text>
+  <text class="h-label" x="140" y="175">h=0</text>
+</svg>
+<div class="diagram-caption">假设 h(B) = 0（实际到 G 还要 2 步）。如果我们在 <b>enqueue G 时就停</b>，会选 S→B→G（g=3+2=5，G enqueued first via B）。但 <b>正确路径</b>是 S→A→G（g=2+2=4）。必须等到 dequeue G 才停。</div>
 </div>
 
 <h3>3.4 Admissibility (用于 Tree Search)</h3>
@@ -361,6 +560,53 @@ goal: 给所有变量赋值，满足所有约束（identification 问题，path 
 <h3>5.4 Constraint Graph</h3>
 <p>节点=变量，边=约束。算法用图结构加速（如 Tasmania 独立 → 整张图能分块解决）。</p>
 
+<h4>📊 澳大利亚地图染色的 Constraint Graph</h4>
+
+<div class="diagram">
+<svg viewBox="0 0 380 240" width="380">
+  <!-- Edges -->
+  <line class="edge-line" x1="80" y1="60" x2="160" y2="60"/>
+  <line class="edge-line" x1="80" y1="60" x2="200" y2="120"/>
+  <line class="edge-line" x1="160" y1="60" x2="240" y2="60"/>
+  <line class="edge-line" x1="160" y1="60" x2="200" y2="120"/>
+  <line class="edge-line" x1="240" y1="60" x2="200" y2="120"/>
+  <line class="edge-line" x1="240" y1="60" x2="280" y2="130"/>
+  <line class="edge-line" x1="200" y1="120" x2="160" y2="180"/>
+  <line class="edge-line" x1="200" y1="120" x2="280" y2="130"/>
+  <line class="edge-line" x1="280" y1="130" x2="280" y2="190"/>
+  <!-- Tasmania isolated -->
+  <line class="edge-line" x1="120" y1="200" x2="120" y2="200" stroke-dasharray="2 2"/>
+  <!-- Nodes -->
+  <circle class="node-circle" cx="80" cy="60" r="22" fill="#ffcdd2"/><text class="node-text" x="80" y="60">WA</text>
+  <circle class="node-circle" cx="160" cy="60" r="22" fill="#c8e6c9"/><text class="node-text" x="160" y="60">NT</text>
+  <circle class="node-circle" cx="240" cy="60" r="22" fill="#ffcdd2"/><text class="node-text" x="240" y="60">Q</text>
+  <circle class="node-circle" cx="200" cy="120" r="22" fill="#bbdefb"/><text class="node-text" x="200" y="120">SA</text>
+  <circle class="node-circle" cx="160" cy="180" r="22" fill="#c8e6c9"/><text class="node-text" x="160" y="180">V</text>
+  <circle class="node-circle" cx="280" cy="130" r="22" fill="#c8e6c9"/><text class="node-text" x="280" y="130">NSW</text>
+  <circle class="node-circle" cx="280" cy="200" r="22" fill="#ffcdd2"/><text class="node-text" x="280" y="200" font-size="9">Tas</text>
+</svg>
+<div class="diagram-caption">每条边=相邻两州不能同色。Tasmania 是<b>独立子问题</b>（孤立节点）→ 单独解。SA 是"中心枢纽"度数最大。</div>
+</div>
+
+<h4>🎬 Backtracking + Forward Checking 动画式走查</h4>
+
+<p>设 Domain = {R, G, B}，按字母序赋值，每次赋值后做 forward checking：</p>
+
+<table class="trace">
+<tr><th>步</th><th>动作</th><th>WA</th><th>NT</th><th>Q</th><th>SA</th><th>NSW</th><th>V</th></tr>
+<tr><td>0</td><td>初始</td><td>RGB</td><td>RGB</td><td>RGB</td><td>RGB</td><td>RGB</td><td>RGB</td></tr>
+<tr><td>1</td><td class="expand">WA = R</td><td><b>R</b></td><td>GB</td><td>RGB</td><td>GB</td><td>RGB</td><td>RGB</td></tr>
+<tr><td>2</td><td class="expand">NT = G</td><td><b>R</b></td><td><b>G</b></td><td>RB</td><td>B</td><td>RGB</td><td>RGB</td></tr>
+<tr><td>3</td><td class="expand">Q = R</td><td><b>R</b></td><td><b>G</b></td><td><b>R</b></td><td>B</td><td>GB</td><td>RGB</td></tr>
+<tr><td>4</td><td class="expand">SA = B</td><td><b>R</b></td><td><b>G</b></td><td><b>R</b></td><td><b>B</b></td><td>G</td><td>RG</td></tr>
+<tr><td>5</td><td class="expand">NSW = G</td><td><b>R</b></td><td><b>G</b></td><td><b>R</b></td><td><b>B</b></td><td><b>G</b></td><td>R</td></tr>
+<tr><td>6</td><td class="expand">V = R</td><td colspan="6">✅ 完整赋值，全部约束满足</td></tr>
+</table>
+
+<div class="note">
+<b>FC 的作用</b>：第 4 步赋 SA=B 后，自动从 NSW 划掉 B（剩下 G），从 V 划掉 B（剩下 RG）。如果某 domain 变空就立即回溯。
+</div>
+
 <h3>5.5 Backtracking Search</h3>
 <p>= <b>DFS + 变量排序 + 边走边查约束</b>。两个核心想法：</p>
 <ol>
@@ -515,6 +761,74 @@ goal: 给所有变量赋值，满足所有约束（identification 问题，path 
 
 <h3>7.2 Minimax</h3>
 
+<h4>📊 Minimax 树示例（自下而上计算）</h4>
+
+<div class="diagram">
+<svg viewBox="0 0 480 260" width="480">
+  <!-- Root MAX = 8 -->
+  <polygon class="triangle-max" points="240,20 220,55 260,55"/>
+  <text class="node-text" x="240" y="42">8</text>
+  <!-- MIN level -->
+  <polygon class="triangle-min" points="120,90 100,55 140,55"/>
+  <text class="node-text" x="120" y="80">8</text>
+  <polygon class="triangle-min" points="240,90 220,55 260,55"/>
+  <text class="node-text" x="240" y="80">2</text>
+  <polygon class="triangle-min" points="360,90 340,55 380,55"/>
+  <text class="node-text" x="360" y="80">6</text>
+  <!-- MAX level -->
+  <polygon class="triangle-max" points="60,160 40,125 80,125"/>
+  <text class="node-text" x="60" y="150">8</text>
+  <polygon class="triangle-max" points="180,160 160,125 200,125"/>
+  <text class="node-text" x="180" y="150">9</text>
+  <polygon class="triangle-max" points="240,160 220,125 260,125"/>
+  <text class="node-text" x="240" y="150">5</text>
+  <polygon class="triangle-max" points="300,160 280,125 320,125"/>
+  <text class="node-text" x="300" y="150">2</text>
+  <polygon class="triangle-max" points="360,160 340,125 380,125"/>
+  <text class="node-text" x="360" y="150">7</text>
+  <polygon class="triangle-max" points="420,160 400,125 440,125"/>
+  <text class="node-text" x="420" y="150">6</text>
+  <!-- Leaves -->
+  <circle class="node-circle" cx="40" cy="200" r="13"/><text class="node-text" x="40" y="200">8</text>
+  <circle class="node-circle" cx="80" cy="200" r="13"/><text class="node-text" x="80" y="200">3</text>
+  <circle class="node-circle" cx="160" cy="200" r="13"/><text class="node-text" x="160" y="200">9</text>
+  <circle class="node-circle" cx="200" cy="200" r="13"/><text class="node-text" x="200" y="200">1</text>
+  <circle class="node-circle" cx="220" cy="200" r="13"/><text class="node-text" x="220" y="200">5</text>
+  <circle class="node-circle" cx="260" cy="200" r="13"/><text class="node-text" x="260" y="200">4</text>
+  <circle class="node-circle" cx="280" cy="200" r="13"/><text class="node-text" x="280" y="200">2</text>
+  <circle class="node-circle" cx="320" cy="200" r="13"/><text class="node-text" x="320" y="200">7</text>
+  <circle class="node-circle" cx="340" cy="200" r="13"/><text class="node-text" x="340" y="200">7</text>
+  <circle class="node-circle" cx="380" cy="200" r="13"/><text class="node-text" x="380" y="200">2</text>
+  <circle class="node-circle" cx="400" cy="200" r="13"/><text class="node-text" x="400" y="200">6</text>
+  <circle class="node-circle" cx="440" cy="200" r="13"/><text class="node-text" x="440" y="200">5</text>
+  <!-- Lines root-MIN -->
+  <line class="edge-line" x1="225" y1="50" x2="125" y2="60"/>
+  <line class="edge-line" x1="240" y1="55" x2="240" y2="60"/>
+  <line class="edge-line" x1="255" y1="50" x2="355" y2="60"/>
+  <!-- MIN-MAX -->
+  <line class="edge-line" x1="110" y1="80" x2="62" y2="130"/>
+  <line class="edge-line" x1="130" y1="80" x2="178" y2="130"/>
+  <line class="edge-line" x1="230" y1="85" x2="240" y2="130"/>
+  <line class="edge-line" x1="250" y1="85" x2="300" y2="130"/>
+  <line class="edge-line" x1="350" y1="80" x2="360" y2="130"/>
+  <line class="edge-line" x1="370" y1="80" x2="420" y2="130"/>
+  <!-- MAX-leaves -->
+  <line class="edge-line" x1="50" y1="150" x2="40" y2="190"/>
+  <line class="edge-line" x1="70" y1="150" x2="80" y2="190"/>
+  <line class="edge-line" x1="170" y1="150" x2="160" y2="190"/>
+  <line class="edge-line" x1="190" y1="150" x2="200" y2="190"/>
+  <line class="edge-line" x1="230" y1="150" x2="220" y2="190"/>
+  <line class="edge-line" x1="250" y1="150" x2="260" y2="190"/>
+  <line class="edge-line" x1="290" y1="150" x2="280" y2="190"/>
+  <line class="edge-line" x1="310" y1="150" x2="320" y2="190"/>
+  <line class="edge-line" x1="350" y1="150" x2="340" y2="190"/>
+  <line class="edge-line" x1="370" y1="150" x2="380" y2="190"/>
+  <line class="edge-line" x1="410" y1="150" x2="400" y2="190"/>
+  <line class="edge-line" x1="430" y1="150" x2="440" y2="190"/>
+</svg>
+<div class="diagram-caption">绿三角=MAX，红三角=MIN。从叶往上：MAX 取 max、MIN 取 min。根值 = 8。</div>
+</div>
+
 <pre>def value(state):
     if terminal: return utility(state)
     if MAX's turn: return max-value(state)
@@ -536,6 +850,85 @@ def min-value(state):
 <p>效率：和穷举 DFS 一样 <b>Time O(b<sup>m</sup>), Space O(bm)</b>。象棋 b≈35, m≈100 → 不可能完整求解。</p>
 
 <h3>7.3 Alpha-Beta Pruning</h3>
+
+<h4>🎯 完整 α-β 走查例子</h4>
+
+<div class="diagram">
+<svg viewBox="0 0 520 280" width="520">
+  <!-- Root MAX -->
+  <polygon class="triangle-max" points="260,20 240,55 280,55"/>
+  <text class="node-text" x="260" y="42">3</text>
+  <!-- MIN level -->
+  <polygon class="triangle-min" points="120,90 100,55 140,55"/>
+  <text class="node-text" x="120" y="80">3</text>
+  <polygon class="triangle-min" points="260,90 240,55 280,55"/>
+  <text class="node-text" x="260" y="80">≤2</text>
+  <polygon class="triangle-min" points="400,90 380,55 420,55"/>
+  <text class="node-text" x="400" y="80">2</text>
+  <!-- Leaves -->
+  <circle class="node-circle" cx="60" cy="130" r="14"/><text class="node-text" x="60" y="130">3</text>
+  <circle class="node-circle" cx="100" cy="130" r="14"/><text class="node-text" x="100" y="130">12</text>
+  <circle class="node-circle" cx="140" cy="130" r="14"/><text class="node-text" x="140" y="130">8</text>
+  <circle class="node-circle" cx="200" cy="130" r="14"/><text class="node-text" x="200" y="130">2</text>
+  <circle class="node-circle pruned" cx="240" cy="130" r="14"/><text class="node-text" x="240" y="130" opacity="0.35">×</text>
+  <circle class="node-circle pruned" cx="280" cy="130" r="14"/><text class="node-text" x="280" y="130" opacity="0.35">×</text>
+  <circle class="node-circle" cx="340" cy="130" r="14"/><text class="node-text" x="340" y="130">14</text>
+  <circle class="node-circle" cx="380" cy="130" r="14"/><text class="node-text" x="380" y="130">5</text>
+  <circle class="node-circle" cx="420" cy="130" r="14"/><text class="node-text" x="420" y="130">2</text>
+  <!-- Lines: root to MIN -->
+  <line class="edge-line" x1="245" y1="50" x2="125" y2="60"/>
+  <line class="edge-line" x1="260" y1="55" x2="260" y2="60"/>
+  <line class="edge-line" x1="275" y1="50" x2="395" y2="60"/>
+  <!-- Lines: MIN to leaves (left set) -->
+  <line class="edge-line" x1="110" y1="80" x2="62" y2="118"/>
+  <line class="edge-line" x1="120" y1="85" x2="100" y2="118"/>
+  <line class="edge-line" x1="130" y1="80" x2="140" y2="118"/>
+  <!-- Middle (with pruning) -->
+  <line class="edge-line" x1="250" y1="80" x2="202" y2="118"/>
+  <line class="edge-line pruned" x1="260" y1="85" x2="240" y2="118"/>
+  <line class="edge-line pruned" x1="270" y1="80" x2="280" y2="118"/>
+  <!-- Right -->
+  <line class="edge-line" x1="390" y1="80" x2="342" y2="118"/>
+  <line class="edge-line" x1="400" y1="85" x2="380" y2="118"/>
+  <line class="edge-line" x1="410" y1="80" x2="420" y2="118"/>
+  <!-- Annotations -->
+  <text class="h-label" x="120" y="165" style="fill:#2e7d32">α=3 (after left)</text>
+  <text class="h-label" x="220" y="165" style="fill:#c0392b">v=2 ≤ α=3 → prune!</text>
+  <text class="h-label" x="400" y="165">α=3 still</text>
+  <text class="edge-label" x="260" y="195" style="font-size:13px">→ 根的 minimax 值 = max(3, 2, 2) = 3</text>
+</svg>
+<div class="diagram-caption">绿色三角=MAX，红色三角=MIN。中间 MIN 节点扫到第一个孩子 v=2 后，因为 2 ≤ α=3，MAX 永远不会选这个分支，所以后两个孩子（×）剪掉。</div>
+</div>
+
+<h4>α-β 模拟步骤（看着上图理解）</h4>
+
+<ol>
+<li><b>左子树</b>：MAX 调 MIN(α=−∞, β=+∞)；MIN 看 3, 12, 8 → 取 min = <b>3</b>。返回 3 给 root。</li>
+<li><b>α 更新为 3</b>（MAX 现在至少能拿 3）。</li>
+<li><b>中子树</b>：MAX 调 MIN(α=3, β=+∞)。MIN 看第一个孩子 = <b>2</b>。
+  <ul>
+    <li>MIN 的 v 现在 = 2，并且 v ≤ α (3) → 触发 α-cut，<b>剩下两个孩子不看</b></li>
+    <li>因为：MIN 已经能给 MAX ≤2 的回报，比左边的 3 还差，MAX 不会选这里</li>
+  </ul>
+</li>
+<li><b>右子树</b>：MAX 调 MIN(α=3, β=+∞)。MIN 看 14, 5, 2 → min = 2。仍 ≤ α，但已经看完，无剪枝可做。</li>
+<li>Root 返回 max(3, 2, 2) = <b>3</b>。共剪掉 2 个叶。</li>
+</ol>
+
+<h4>💡 关键直觉</h4>
+
+<div class="grid2">
+<div class="good">
+<b>α-cut（在 MIN 节点）</b><br>
+当 MIN 节点的 v ≤ α：<br>
+MIN 已经能给 MAX 一个 ≤α 的结果，但 MAX 在别处已有 ≥α，所以 MAX 不会选这里 → 剪。
+</div>
+<div class="good">
+<b>β-cut（在 MAX 节点）</b><br>
+当 MAX 节点的 v ≥ β：<br>
+MAX 已经能拿到 ≥β，但 MIN 在别处能限制为 ≤β，所以 MIN 不会让到这里 → 剪。
+</div>
+</div>
 
 <pre>def max-value(state, α, β):
     v = -∞
@@ -651,6 +1044,52 @@ UCB1(n) = <b>U(n) / N(n)</b> &nbsp;+&nbsp; <b>C · √( ln N(parent) / N(n) )</b
 <h3>8.1 Expectimax</h3>
 <p>不是对手 vs 我，而是<b>随机</b>结果（骰子、随机 ghost、动作可能失败）。</p>
 
+<h4>📊 Expectimax 树示例</h4>
+
+<div class="diagram">
+<svg viewBox="0 0 460 240" width="460">
+  <!-- Root MAX = 10 -->
+  <polygon class="triangle-max" points="230,20 210,55 250,55"/>
+  <text class="node-text" x="230" y="42">10</text>
+  <!-- Chance nodes (circles) -->
+  <circle cx="120" cy="80" r="20" fill="#fff" stroke="#0b5394" stroke-width="2"/>
+  <text class="node-text" x="120" y="80">10</text>
+  <circle cx="230" cy="80" r="20" fill="#fff" stroke="#0b5394" stroke-width="2"/>
+  <text class="node-text" x="230" y="80">7</text>
+  <circle cx="340" cy="80" r="20" fill="#fff" stroke="#0b5394" stroke-width="2"/>
+  <text class="node-text" x="340" y="80">5</text>
+  <!-- Leaves -->
+  <circle class="node-circle" cx="70" cy="170" r="14"/><text class="node-text" x="70" y="170">5</text>
+  <circle class="node-circle" cx="120" cy="170" r="14"/><text class="node-text" x="120" y="170">8</text>
+  <circle class="node-circle" cx="170" cy="170" r="14"/><text class="node-text" x="170" y="170">24</text>
+  <circle class="node-circle" cx="210" cy="170" r="14"/><text class="node-text" x="210" y="170">7</text>
+  <circle class="node-circle" cx="250" cy="170" r="14"/><text class="node-text" x="250" y="170">7</text>
+  <circle class="node-circle" cx="300" cy="170" r="14"/><text class="node-text" x="300" y="170">0</text>
+  <circle class="node-circle" cx="340" cy="170" r="14"/><text class="node-text" x="340" y="170">10</text>
+  <circle class="node-circle" cx="380" cy="170" r="14"/><text class="node-text" x="380" y="170">−12</text>
+  <!-- Lines root to chance -->
+  <line class="edge-line" x1="215" y1="50" x2="130" y2="65"/>
+  <line class="edge-line" x1="230" y1="55" x2="230" y2="60"/>
+  <line class="edge-line" x1="245" y1="50" x2="330" y2="65"/>
+  <!-- Lines chance to leaves -->
+  <line class="edge-line" x1="105" y1="90" x2="73" y2="158"/>
+  <line class="edge-line" x1="120" y1="100" x2="120" y2="158"/>
+  <line class="edge-line" x1="135" y1="90" x2="167" y2="158"/>
+  <line class="edge-line" x1="215" y1="90" x2="210" y2="158"/>
+  <line class="edge-line" x1="245" y1="90" x2="250" y2="158"/>
+  <line class="edge-line" x1="325" y1="90" x2="300" y2="158"/>
+  <line class="edge-line" x1="340" y1="100" x2="340" y2="158"/>
+  <line class="edge-line" x1="355" y1="90" x2="377" y2="158"/>
+  <!-- Probabilities -->
+  <text class="edge-label" x="85" y="125">1/2</text>
+  <text class="edge-label" x="125" y="135">1/3</text>
+  <text class="edge-label" x="155" y="120">1/6</text>
+  <text class="edge-label" x="217" y="130">1/2</text>
+  <text class="edge-label" x="247" y="130">1/2</text>
+</svg>
+<div class="diagram-caption">圆形=chance 节点。中间节点：v = ½·8 + ⅓·24 + ⅙·(−12) = 4 + 8 − 2 = <b>10</b>。根=max(10, 7, 5)=10。</div>
+</div>
+
 <pre>def value(state):
     if terminal: return utility
     if MAX: return max-value(state)
@@ -738,6 +1177,71 @@ MDP = ⟨ S, A, T(s,a,s')=P(s'|s,a), R(s,a,s'), s₀, γ ⟩<br>
   <li>每步 living reward（可负，鼓励快走完）+ 终态大奖</li>
 </ul>
 
+<h4>📊 Grid World 经典布局 + V* 数值</h4>
+
+<div class="diagram">
+<svg viewBox="0 0 400 280" width="400">
+  <!-- 4x3 grid -->
+  <g stroke="#888" stroke-width="1.5">
+    <!-- row 1 (top) -->
+    <rect x="40" y="20" width="70" height="70" fill="#f5f5f5"/>
+    <rect x="110" y="20" width="70" height="70" fill="#f5f5f5"/>
+    <rect x="180" y="20" width="70" height="70" fill="#f5f5f5"/>
+    <rect x="250" y="20" width="70" height="70" fill="#c8e6c9"/>
+    <!-- row 2 -->
+    <rect x="40" y="90" width="70" height="70" fill="#f5f5f5"/>
+    <rect x="110" y="90" width="70" height="70" fill="#424242"/>
+    <rect x="180" y="90" width="70" height="70" fill="#f5f5f5"/>
+    <rect x="250" y="90" width="70" height="70" fill="#ffcdd2"/>
+    <!-- row 3 (bottom) -->
+    <rect x="40" y="160" width="70" height="70" fill="#ffe0b2"/>
+    <rect x="110" y="160" width="70" height="70" fill="#f5f5f5"/>
+    <rect x="180" y="160" width="70" height="70" fill="#f5f5f5"/>
+    <rect x="250" y="160" width="70" height="70" fill="#f5f5f5"/>
+  </g>
+  <!-- V* values -->
+  <text class="node-text" x="75" y="55" font-size="13">0.81</text>
+  <text class="node-text" x="145" y="55" font-size="13">0.87</text>
+  <text class="node-text" x="215" y="55" font-size="13">0.92</text>
+  <text class="node-text" x="285" y="55" font-size="14" font-weight="700">+1</text>
+  <text class="node-text" x="75" y="125" font-size="13">0.76</text>
+  <text class="node-text" x="145" y="125" fill="#fff" font-size="11">wall</text>
+  <text class="node-text" x="215" y="125" font-size="13">0.66</text>
+  <text class="node-text" x="285" y="125" font-size="14" font-weight="700">−1</text>
+  <text class="node-text" x="75" y="195" font-size="13">0.71</text>
+  <text class="node-text" x="145" y="195" font-size="13">0.66</text>
+  <text class="node-text" x="215" y="195" font-size="13">0.61</text>
+  <text class="node-text" x="285" y="195" font-size="13">0.39</text>
+  <text class="h-label" x="75" y="210" font-size="9">Start</text>
+  <!-- legend -->
+  <text class="h-label" x="40" y="255" font-size="11">γ = 0.9, noise = 0.2, living reward = 0</text>
+  <text class="h-label" x="40" y="270" font-size="11">绿=+1 终态, 红=−1 终态, 黑=墙</text>
+</svg>
+<div class="diagram-caption">每格的数字是 V*(s)。注意：右下 0.39 比左上 0.81 低很多 —— 它紧挨 −1 陷阱，noisy 动作有掉进去风险。</div>
+</div>
+
+<h4>🎲 Noisy Action 示意</h4>
+
+<div class="diagram">
+<svg viewBox="0 0 360 180" width="360">
+  <rect x="140" y="60" width="60" height="60" fill="#fff3e0" stroke="#0b5394" stroke-width="2"/>
+  <text class="node-text" x="170" y="90">s</text>
+  <!-- arrows: intended up, actual: up/left/right -->
+  <line class="edge-line" x1="170" y1="55" x2="170" y2="20" marker-end="url(#arr2)" stroke="#2e7d32" stroke-width="3"/>
+  <text class="edge-label" x="180" y="30" fill="#2e7d32">0.8 ↑</text>
+  <line class="edge-line" x1="140" y1="80" x2="80" y2="80" marker-end="url(#arr2)" stroke="#e65100" stroke-width="2"/>
+  <text class="edge-label" x="85" y="70" fill="#e65100">0.1 ←</text>
+  <line class="edge-line" x1="200" y1="80" x2="260" y2="80" marker-end="url(#arr2)" stroke="#e65100" stroke-width="2"/>
+  <text class="edge-label" x="225" y="70" fill="#e65100">0.1 →</text>
+  <text class="h-label" x="100" y="160" font-size="11">action = "North"，T(s, N, ?) 分布如图。撞墙则原地。</text>
+  <defs>
+    <marker id="arr2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#555"/>
+    </marker>
+  </defs>
+</svg>
+</div>
+
 <h3>9.3 Discounting</h3>
 <div class="formula-block">
 U([r₀, r₁, r₂, ...]) = r₀ + γr₁ + γ²r₂ + ... = ∑ γ<sup>t</sup>r_t<br>
@@ -784,6 +1288,70 @@ until max_s |V_{k+1}(s) − V_k(s)| < ε</pre>
   <li>收敛到唯一 V*</li>
   <li>V_k(s) 解释为<b>"还剩 k 步可走"</b>时的最优值（depth-k expectimax）</li>
   <li>Policy 经常比 V 早收敛</li>
+</ul>
+
+<h4>🏎️ Racing MDP 完整走查</h4>
+
+<div class="diagram">
+<svg viewBox="0 0 480 240" width="480">
+  <!-- States -->
+  <circle class="node-start" cx="80" cy="120" r="30"/><text class="node-text" x="80" y="120">Cool</text>
+  <circle class="node-circle" cx="240" cy="120" r="30"/><text class="node-text" x="240" y="120">Warm</text>
+  <circle class="node-goal" cx="400" cy="120" r="30"/><text class="node-text" x="400" y="120" font-size="11">Over-<tspan x="400" dy="12">heated</tspan></text>
+  <!-- Slow: Cool→Cool (self), Warm→Cool -->
+  <path class="edge-line" d="M 60 95 Q 35 60 65 95" fill="none" marker-end="url(#arr)"/>
+  <text class="edge-label" x="20" y="80">slow: +1 (p=1)</text>
+  <path class="edge-line" d="M 215 100 Q 160 80 105 100" fill="none"/>
+  <text class="edge-label" x="135" y="80">slow: +1 (p=0.5)</text>
+  <!-- Warm self (slow) -->
+  <path class="edge-line" d="M 260 95 Q 290 70 270 95" fill="none"/>
+  <text class="edge-label" x="270" y="65">slow: +1 (p=0.5)</text>
+  <!-- Fast: Cool→Cool, Cool→Warm -->
+  <path class="edge-line" d="M 105 130 Q 160 160 215 130" fill="none"/>
+  <text class="edge-label" x="130" y="170">fast: +2 (p=0.5) → Warm</text>
+  <path class="edge-line" d="M 60 145 Q 30 175 60 145" fill="none"/>
+  <text class="edge-label" x="20" y="170">fast: +2 (p=0.5) → Cool</text>
+  <!-- Fast: Warm→Overheated -->
+  <line class="edge-line" x1="270" y1="120" x2="370" y2="120"/>
+  <text class="edge-label" x="290" y="110">fast: −10 (p=1)</text>
+</svg>
+<div class="diagram-caption">3 状态：Cool（起），Warm，Overheated（终）。两动作：slow（保守）、fast（快但有风险）。设 γ = 1，Overheated 是终态 V=0。</div>
+</div>
+
+<h4>VI 迭代表（γ = 1）</h4>
+
+<table class="trace">
+<tr><th>k</th><th>V_k(Cool)</th><th>V_k(Warm)</th><th>V_k(Over)</th><th>关键计算</th></tr>
+<tr><td>0</td><td>0</td><td>0</td><td>0</td><td>初始</td></tr>
+<tr><td>1</td><td><b>2</b></td><td><b>1</b></td><td>0</td>
+<td>
+<div style="font-size:0.85em">
+Cool: max(slow→1·(1+0)=<b>1</b>, fast→0.5·(2+0)+0.5·(2+0)=<b>2</b>) = 2<br>
+Warm: max(slow→0.5(1+0)+0.5(1+0)=<b>1</b>, fast→1·(−10+0)=<b>−10</b>) = 1
+</div>
+</td></tr>
+<tr><td>2</td><td><b>3.5</b></td><td><b>2</b></td><td>0</td>
+<td>
+<div style="font-size:0.85em">
+Cool: max(slow→1+2=<b>3</b>, fast→0.5(2+2)+0.5(2+1)=<b>3.5</b>) = 3.5<br>
+Warm: max(slow→0.5(1+2)+0.5(1+1)=<b>2.5</b>, fast→−10) 等等 → 实际取 max(2.5, −10) = 2.5。<br>
+<i>(注：slides 给的 3.5/2.5 对应不同初始/γ；这里按 γ=1 重算)</i>
+</div>
+</td></tr>
+</table>
+
+<h4>📈 收敛趋势（γ &lt; 1）</h4>
+<p>γ = 1 时 Cool/Warm 的 V 会一直涨（slow 永远 +1）。引入 γ = 0.9 才会收敛。<b>实际 V* 是几何级数和</b>：</p>
+<div class="formula-block">
+若一直按 slow 走，V*(Cool) = 1 + γ + γ² + ... = 1/(1−γ)<br>
+γ=0.9 → V*(Cool) ≥ 10
+</div>
+
+<h4>从 V* 导 π*（policy extraction）</h4>
+<p>对每个状态 s，比较所有 a 的 Q*(s, a) = ∑ T·(R + γV*(s'))，选 argmax：</p>
+<ul>
+<li>Cool：Q(slow) ≈ 1+γ·V*(Cool)；Q(fast) ≈ 0.5(2+γV(Cool)) + 0.5(2+γV(Warm))；如果 V(Warm) 比 V(Cool) 小很多，fast 反而差 → π*(Cool) 可能=slow</li>
+<li>Warm：Q(slow) 安全，Q(fast) = −10（直接 Overheated）→ π*(Warm) = <b>slow</b>（绝不冒险）</li>
 </ul>
 
 <details>
@@ -971,6 +1539,85 @@ sample = r + γ·max<sub>a'</sub> Q(s', a')<br>
   <li>α 最终足够小</li>
   <li>但 α 不能下降太快</li>
 </ol>
+</div>
+
+<h4>🎯 Q-Learning 数值走查（su25 final Q4 题型）</h4>
+
+<p><b>初始 Q 表</b>（γ=1, α=0.5）：</p>
+
+<table class="trace">
+<tr><th></th><th>A</th><th>B</th><th>C</th><th>D</th><th>E</th><th>F</th><th>T (终态)</th></tr>
+<tr><td>Buy</td><td>0</td><td>0</td><td>4</td><td>2</td><td>3</td><td>1</td><td>0</td></tr>
+<tr><td>Sell</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td><td>0</td></tr>
+<tr><td>Hold</td><td>2</td><td>1</td><td>2</td><td>3</td><td>2</td><td>4</td><td>0</td></tr>
+</table>
+
+<p>观察三个样本依次：(A, Buy, C, 0), (C, Sell, E, 0), (E, Hold, T, 5)。</p>
+
+<h4>逐步更新</h4>
+
+<table class="trace">
+<tr><th>样本</th><th>当前 Q</th><th>max_a' Q(s',·)</th><th>计算</th><th>新 Q</th></tr>
+<tr>
+<td>(A, Buy, C, r=0)</td>
+<td>Q(A,Buy)=0</td>
+<td>max(Q(C, Buy/Sell/Hold)) = max(4, 3, 2) = <b>4</b></td>
+<td>(1−0.5)·0 + 0.5·(0 + 1·4) = 0 + 2</td>
+<td><b>Q(A,Buy) = 2</b></td>
+</tr>
+<tr>
+<td>(C, Sell, E, r=0)</td>
+<td>Q(C,Sell)=3</td>
+<td>max(Q(E, ·)) = max(3, 5, 2) = <b>5</b></td>
+<td>0.5·3 + 0.5·(0 + 1·5) = 1.5 + 2.5</td>
+<td><b>Q(C,Sell) = 4</b></td>
+</tr>
+<tr>
+<td>(E, Hold, T, r=5)</td>
+<td>Q(E,Hold)=2</td>
+<td>max Q(T, ·) = <b>0</b>（终态）</td>
+<td>0.5·2 + 0.5·(5 + 1·0) = 1 + 2.5</td>
+<td><b>Q(E,Hold) = 3.5</b></td>
+</tr>
+</table>
+
+<div class="warn">
+<b>易错点</b>：
+<ul>
+<li>用 <b>更新前</b>的 Q 算 max（即使前面样本已经更新了 Q(A,Buy)，第二个样本算 max Q(E,·) 时仍用原表）</li>
+<li>到 <b>terminal</b> 时 max Q(s', ·) = <b>0</b>，不是上一行的 Q 值</li>
+<li>γ=1 时不要忘记，但写式子时仍要写 γ·max</li>
+</ul>
+</div>
+
+<h4>📊 Q-Learning 流程图</h4>
+
+<div class="diagram">
+<svg viewBox="0 0 500 220" width="500">
+  <!-- Environment box -->
+  <rect x="20" y="80" width="120" height="60" fill="#e3f2fd" stroke="#1565c0" stroke-width="2" rx="6"/>
+  <text class="node-text" x="80" y="110">环境</text>
+  <text class="h-label" x="80" y="128">(T, R 未知)</text>
+  <!-- Agent box -->
+  <rect x="360" y="80" width="120" height="60" fill="#fff3e0" stroke="#e65100" stroke-width="2" rx="6"/>
+  <text class="node-text" x="420" y="100">Agent</text>
+  <text class="h-label" x="420" y="118">Q 表</text>
+  <text class="h-label" x="420" y="132">+ exploration</text>
+  <!-- Arrows -->
+  <line class="edge-line" x1="140" y1="100" x2="355" y2="100" marker-end="url(#arr)"/>
+  <text class="edge-label" x="200" y="92">观测 s, r</text>
+  <line class="edge-line" x1="355" y1="125" x2="140" y2="125" marker-end="url(#arr)"/>
+  <text class="edge-label" x="200" y="145">动作 a</text>
+  <!-- Update loop -->
+  <path class="edge-line" d="M 420 145 Q 420 195 360 195 Q 300 195 300 145" fill="none" marker-end="url(#arr)"/>
+  <text class="edge-label" x="290" y="210" style="font-size:11px">Q(s,a) ← (1−α)Q(s,a) + α[r+γ max Q(s',·)]</text>
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#555"/>
+    </marker>
+  </defs>
+</svg>
+<div class="diagram-caption">Q-learning 无模型 RL：agent 不需要 T、R，每次拿到样本 (s,a,r,s') 就更新 Q 表。</div>
 </div>
 
 <div class="quiz">
