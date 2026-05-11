@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0b5394">
+<title>CS188 期中复习笔记 (Lec 01–12)</title>
+<style>
+  :root {
+    --bg: #fafaf7; --fg: #1a1a1a; --accent: #0b5394;
+    --muted: #555; --hl: #fff3a3; --code: #eef3f8;
+    --warn: #fff0f0; --warn-border: #c0392b;
+    --good: #f0fff4; --good-border: #2e7d32;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "Helvetica Neue", "PingFang SC", "Microsoft YaHei", sans-serif;
+    line-height: 1.65; color: var(--fg); background: var(--bg);
+    max-width: 980px; margin: 0 auto; padding: 24px 32px;
+  }
+  h1 { color: var(--accent); border-bottom: 3px solid var(--accent); padding-bottom: 8px; }
+  h2 { color: var(--accent); margin-top: 2em; border-left: 5px solid var(--accent); padding-left: 12px; }
+  h3 { color: #333; margin-top: 1.5em; }
+  h4 { color: #555; margin-top: 1.2em; }
+  code, .formula { background: var(--code); padding: 2px 6px; border-radius: 3px; font-family: "SF Mono", Consolas, monospace; font-size: 0.95em; }
+  pre { background: var(--code); padding: 12px 16px; border-radius: 6px; overflow-x: auto; font-size: 0.9em; line-height: 1.5; }
+  .formula-block { background: #f8f5e8; border-left: 4px solid #d4a017; padding: 10px 16px; margin: 12px 0; font-family: "SF Mono", Consolas, monospace; }
+  .key { background: var(--hl); padding: 1px 4px; border-radius: 2px; font-weight: 500; }
+  .warn { background: var(--warn); border-left: 4px solid var(--warn-border); padding: 10px 16px; margin: 12px 0; }
+  .good { background: var(--good); border-left: 4px solid var(--good-border); padding: 10px 16px; margin: 12px 0; }
+  .note { background: #f0f5ff; border-left: 4px solid #4267b2; padding: 10px 16px; margin: 12px 0; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 0.92em; }
+  th, td { border: 1px solid #ccc; padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: #e8edf2; font-weight: 600; }
+  td.center { text-align: center; }
+  ul, ol { padding-left: 24px; }
+  li { margin: 4px 0; }
+  .toc { background: #fff; border: 1px solid #ddd; padding: 16px 24px; border-radius: 8px; }
+  .toc ol { margin: 0; }
+  .toc a { color: var(--accent); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .lec-tag { display: inline-block; background: var(--accent); color: white; font-size: 0.75em; padding: 2px 8px; border-radius: 10px; margin-left: 8px; vertical-align: middle; }
+  .quiz { background: #fef9e7; border: 1px dashed #b58900; padding: 10px 16px; margin: 12px 0; border-radius: 4px; }
+  .quiz-q { font-weight: 600; }
+  details { margin: 8px 0; }
+  summary { cursor: pointer; color: var(--accent); font-weight: 500; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 700px) { .grid2 { grid-template-columns: 1fr; } body { padding: 16px; } }
+  hr { border: none; border-top: 1px dashed #ccc; margin: 32px 0; }
+</style>
+</head>
+<body>
+
+<h1>CS188 期中复习笔记 (Lec 01–12)</h1>
+<p style="color:var(--muted)">范围：Search · CSPs · Games · MDPs · Reinforcement Learning · 来源：sp26 课件 lec01–lec12（已通过 NotebookLM 校对原文）</p>
+
+<div class="toc">
+  <strong>目录</strong>
+  <ol>
+    <li><a href="#l1">Lec 1 · Intro & Rational Agents</a></li>
+    <li><a href="#l2">Lec 2 · Uninformed Search (DFS / BFS / UCS)</a></li>
+    <li><a href="#l3">Lec 3 · Informed Search (Greedy / A*) & Graph Search</a></li>
+    <li><a href="#l4">Lec 4 · Local Search (Hill Climbing / SA / GA / Gradient)</a></li>
+    <li><a href="#l5">Lec 5 · CSPs I (Backtracking / Filtering)</a></li>
+    <li><a href="#l6">Lec 6 · CSPs II (K-Consistency / Ordering / Structure / Min-Conflicts)</a></li>
+    <li><a href="#l7">Lec 7 · Adversarial Search (Minimax / α-β / Eval Functions)</a></li>
+    <li><a href="#l8">Lec 8 · Expectimax · Utilities · Rationality</a></li>
+    <li><a href="#l9">Lec 9 · MDPs I & Value Iteration</a></li>
+    <li><a href="#l10">Lec 10 · MDPs II · Bellman · Policy Iteration</a></li>
+    <li><a href="#l11">Lec 11 · RL I (Model-Based / Direct Eval / TD / Q-Learning)</a></li>
+    <li><a href="#l12">Lec 12 · RL II (Exploration / Approximate Q / Policy Search)</a></li>
+    <li><a href="#cheat">📋 一页 Cheat Sheet（考前最后看）</a></li>
+  </ol>
+</div>
+
+<hr>
+
+<!-- ========================= LEC 1 ========================= -->
+<h2 id="l1">1. Intro & Rational Agents <span class="lec-tag">Lec 01</span></h2>
+
+<h3>1.1 核心概念</h3>
+<ul>
+  <li><b>Agent</b>：感知环境（percepts → sensors）并采取动作（actions → actuators）的实体。</li>
+  <li><b>Rational agent</b>：选择能最大化其<span class="key">期望效用 (expected utility)</span>的动作。注意是"期望"而非保证。</li>
+  <li><b>Agent function</b>：从 percept 序列到动作的映射；由 agent program 实现。</li>
+</ul>
+
+<h3>1.2 环境维度（决定 agent 设计）</h3>
+<table>
+<tr><th>维度</th><th>含义</th><th>对设计的影响</th></tr>
+<tr><td>Fully / Partially observable</td><td>能否看到完整状态</td><td>partial → 需要 memory / internal state</td></tr>
+<tr><td>Deterministic / Stochastic</td><td>动作结果是否随机</td><td>stochastic → 必须处理 contingency</td></tr>
+<tr><td>Single / Multi-agent</td><td>是否有其他 agent</td><td>multi → 可能需要随机化策略</td></tr>
+<tr><td>Static / Dynamic</td><td>思考时世界是否变化</td><td>static → 有时间思考</td></tr>
+<tr><td>Discrete / Continuous</td><td>状态/时间是否离散</td><td>continuous → 需要 controller</td></tr>
+<tr><td>Known / Unknown physics</td><td>是否知道动力学</td><td>unknown → 需要 exploration</td></tr>
+</table>
+
+<h3>1.3 Reflex agent vs Planning agent</h3>
+<ul>
+  <li><b>Reflex</b>：仅基于当前 percept（可能加 memory）选动作，不考虑未来。问"世界是怎样的"。</li>
+  <li><b>Planning</b>：用世界模型模拟"如果...会怎样"，选动作前考虑后果。问"世界会变成怎样"。</li>
+  <li>区分 <b>optimal vs complete</b>，<b>planning vs replanning</b>。</li>
+</ul>
+
+<h3>1.4 PEAS 描述（教材强调）</h3>
+<p>定义 task environment 用 <b>PEAS</b>：</p>
+<ul>
+  <li><b>P</b>erformance measure — agent 想最大化的效用</li>
+  <li><b>E</b>nvironment — agent 行动的场所</li>
+  <li><b>A</b>ctuators — agent 作用于环境的方式</li>
+  <li><b>S</b>ensors — agent 接收信息的方式</li>
+</ul>
+<p>例：自动驾驶车 = (P: 安全到达 / 准时 / 舒适, E: 道路+其他车, A: 方向盘+油门+刹车, S: 摄像头+雷达+GPS)。</p>
+
+<hr>
+
+<!-- ========================= LEC 2 ========================= -->
+<h2 id="l2">2. Uninformed Search <span class="lec-tag">Lec 02</span></h2>
+
+<h3>2.1 Search Problem 形式化</h3>
+<div class="formula-block">
+A search problem = ⟨ <b>states</b>, <b>successor function</b> (action → (next state, cost)), <b>start state</b>, <b>goal test</b> ⟩<br>
+<b>Solution</b> = 一系列动作（plan）把 start 变为 goal。
+</div>
+
+<div class="note">
+<b>World state vs Search state</b>：world state 包含环境一切细节；search state 只保留 planning 所需的抽象信息。<br>
+例：Pacman 吃豆问题，pathing 的 search state 是 (x,y)；eat-all-dots 的 search state 是 (x,y, dot-booleans)。<br>
+状态空间大小：12×10 grid + 30 dots + 2 ghosts + 4 朝向 → world: 120·2³⁰·12²·4；pathing: 120；eat-all-dots: 120·2³⁰。
+</div>
+
+<h3>2.2 State Space Graph vs Search Tree</h3>
+<ul>
+  <li><b>State space graph</b>：每个状态出现一次；通常太大，存不下整个图。</li>
+  <li><b>Search tree</b>：节点是 plans（路径），同一状态可对应多个节点（因不同 path）。</li>
+  <li>用 <b>fringe</b>（待扩展节点集合）按某种策略扩展。</li>
+</ul>
+
+<h3>2.3 三种 Uninformed Search</h3>
+<table>
+<tr><th>算法</th><th>策略</th><th>Fringe</th><th>Complete?</th><th>Optimal?</th><th>Time</th><th>Space</th></tr>
+<tr><td><b>DFS</b></td><td>最深节点先</td><td>LIFO stack</td><td>m 有限且防环时是</td><td>否（找到最左解）</td><td>O(b<sup>m</sup>)</td><td>O(bm)</td></tr>
+<tr><td><b>BFS</b></td><td>最浅节点先</td><td>FIFO queue</td><td>是（s 有限）</td><td>仅当代价全为 1</td><td>O(b<sup>s</sup>)</td><td>O(b<sup>s</sup>)</td></tr>
+<tr><td><b>UCS</b></td><td>累计代价最小先</td><td>priority queue (g)</td><td>是（代价>0）</td><td><b>是</b></td><td>O(b<sup>C*/ε</sup>)</td><td>O(b<sup>C*/ε</sup>)</td></tr>
+</table>
+<p style="font-size:0.9em;color:var(--muted)">b = 分支因子，m = 最大深度，s = 最浅解深度，C* = 最优代价，ε = 最小弧代价。</p>
+
+<h3>2.4 Iterative Deepening</h3>
+<p>结合 DFS 的空间优势和 BFS 的浅层优势：依次跑 depth-limit = 1, 2, 3, ... 的 DFS。看似浪费，但最深层占大部分工作，整体仍 O(b<sup>d</sup>)。</p>
+
+<h3>2.5 The One Queue</h3>
+<p>DFS / BFS / UCS 仅在 fringe 策略上不同。概念上都是 priority queue；DFS/BFS 可用 stack/queue 避免 log 开销。</p>
+
+<div class="warn">
+<b>Search Gone Wrong</b>：搜索只对模型作用，不在真实世界中尝试 plan。模型不准 → 搜索结果再"最优"也无用。
+</div>
+
+<div class="quiz">
+<b>📝 高频考点 · 搜索基础</b>
+<ol>
+<li><b>状态空间大小</b>：用乘法原理。例 Pacman（书架排书 36 本）= 36!；不是 2^36（每个位置不是 boolean，是哪本书）。<br>
+原则：状态需要记录<b>能区分不同 plan 后续</b>所需的最小信息。</li>
+<li><b>分支因子计算</b>：sp24 final Q2 — 6×6 书架，三种动作（右移整行/左移整行/换两本不同行）。<br>
+分支 = 12（6 行 × 2 方向移） + C(36,2)−6·C(6,2) = 540 + 12 = <b>552</b>。</li>
+<li><b>goal test 是否 valid</b>：检查是否存在<b>非 goal 但通过 test</b>的状态。如"每本书左边是 b_{i−1}"——若两整行互换，每本书相对邻居正确但绝对位置错 → invalid。</li>
+<li><b>哪些算法保证最优</b>（典型选择题）：BFS（仅当 unit cost）、UCS、A* tree + admissible、A* graph + consistent。DFS 不、Greedy 不、A* w/ 0-heuristic = UCS。</li>
+<li><b>UCS w/ all costs = 1 等价于 BFS</b>。</li>
+<li><b>状态扩展数</b>（DFS vs BFS）：要会按 fringe 操作顺序模拟。DFS 是 stack（"后进的右子先弹"），BFS 是 queue。给定 maze 算扩展几次后才到 goal。</li>
+</ol>
+</div>
+
+<hr>
+
+<!-- ========================= LEC 3 ========================= -->
+<h2 id="l3">3. Informed Search & A* <span class="lec-tag">Lec 03</span></h2>
+
+<h3>3.1 Heuristic</h3>
+<p><b>启发式</b> h(s)：估计 s 到最近 goal 的代价。针对具体问题设计。例：Manhattan / Euclidean 距离、Pancake 中最大未归位煎饼号。</p>
+
+<h3>3.2 Greedy vs UCS vs A*</h3>
+<table>
+<tr><th>算法</th><th>优先级</th><th>说明</th></tr>
+<tr><td>UCS</td><td>g(n) = 已走代价</td><td>各方向均匀扩展，optimal 但慢</td></tr>
+<tr><td>Greedy</td><td>h(n) = 估计剩余</td><td>直冲目标，但可能很差（像被误导的 DFS）</td></tr>
+<tr><td><b>A*</b></td><td><b>f(n) = g(n) + h(n)</b></td><td>结合两者，主要向目标，但保留全局信息</td></tr>
+</table>
+
+<h3>3.3 A* 何时终止？</h3>
+<div class="warn">
+只在 <b>dequeue goal</b> 时停，不能在 enqueue goal 时停。否则可能错过更优路径。
+</div>
+
+<h3>3.4 Admissibility (用于 Tree Search)</h3>
+<div class="formula-block">
+h 是 <b>admissible (乐观)</b> ⟺ 对所有 s：0 ≤ h(s) ≤ h*(s)（真实最优代价）<br>
+<b>定理</b>：若 h admissible，<span class="key">A* tree search 是 optimal</span>。
+</div>
+
+<details>
+<summary>📐 证明草图（要会复述）</summary>
+<p>设 A 为最优 goal，B 为次优 goal，假设 B 已在 fringe。令 n 为 A 在 fringe 上的某祖先（也可能是 A 自己）。</p>
+<ol>
+<li>f(n) = g(n) + h(n) ≤ g(n) + h*(n) = g(A) = f(A)（admissibility + h=0 at goal）</li>
+<li>f(A) < f(B)（A 比 B 更便宜，且二者都在 goal，h=0）</li>
+<li>所以 f(n) ≤ f(A) < f(B)，n 先被扩展 → A 先被扩展 → 最优。</li>
+</ol>
+</details>
+
+<h3>3.5 设计 Admissible Heuristic</h3>
+<ul>
+  <li><b>放松问题 (relaxed problem)</b>：在更宽松的问题中求最优解 → 一定 ≤ 原问题最优 → admissible。</li>
+  <li>例 8-puzzle：
+    <ul>
+      <li>h₁ = 错位方块数（放松：方块可瞬移）</li>
+      <li>h₂ = 总曼哈顿距离（放松：方块可穿过他物）—— 比 h₁ 更紧。</li>
+    </ul>
+  </li>
+</ul>
+
+<h3>3.6 Dominance</h3>
+<p>若 h_a(s) ≥ h_b(s) 对所有 s 成立且 h_a admissible，则 h_a <b>dominates</b> h_b。两个 admissible h 的 <b>max</b> 仍 admissible 且通常更好。零启发 h≡0 退化为 UCS。</p>
+
+<h3>3.7 Graph Search</h3>
+<p>Tree search 重复扩展同一 state → 指数级浪费。<b>Graph search</b> 维护 <span class="key">closed set（已扩展状态）</span>，扩展前检查跳过重复。</p>
+
+<pre>function GRAPH-SEARCH(problem):
+    fringe = {start_node}
+    closed = {}
+    loop:
+        if fringe empty: return failure
+        node = pop best from fringe
+        if goal_test(node.state): return node
+        if node.state not in closed:
+            add node.state to closed
+            expand: add children to fringe</pre>
+
+<h3>3.8 Consistency（用于 Graph Search 的 A* 最优性）</h3>
+<div class="formula-block">
+h 是 <b>consistent</b> ⟺ 对每条弧 (A → C)：<b>h(A) ≤ cost(A,C) + h(C)</b><br>
+等价：f 值沿 path 单调不降。<br>
+<b>Consistency ⟹ Admissibility</b>（反之不一定）。
+</div>
+
+<div class="good">
+<b>最优性总结</b>：
+<ul>
+  <li><b>Tree search</b>：A* 最优 ⟺ h admissible（UCS 是 h=0 的特例）</li>
+  <li><b>Graph search</b>：A* 最优 ⟺ h consistent</li>
+  <li>大多数 relaxation 得来的 admissible h 自然也是 consistent。</li>
+</ul>
+</div>
+
+<h3>3.9 A* 缺点 & 变种</h3>
+<p>A* 需把整个 explored 区域放内存 → 可能爆内存。变种：IDA*（用 f-limit 代替 depth-limit）、RBFS、SMA*。</p>
+
+<div class="quiz">
+<b>📝 高频考点 · 启发式</b>
+<ol>
+<li><b>判断 admissible</b> 的反例法：找到一个状态使 h(s) &gt; h*(s)。常见陷阱：
+  <ul>
+    <li>"完成目标需要 N 步" 类启发，当真正最优可能 &lt; N（例 Knight's tour: Manhattan 距离 overestimate，因为骑士一步可跨 2+1）</li>
+    <li>"剩余食物数" 在 Pacman 一格一豆 + 步代价 1 时是 admissible（每豆至少 1 步）</li>
+    <li>"calorie 不够"问题：h = 10−C（剩余卡路里）<b>不</b> admissible，因为可能一步吃到 100 卡</li>
+  </ul></li>
+<li><b>Consistency ⟹ Admissibility</b>（反之不一定）。反过来选项要选错。</li>
+<li><b>Greedy + consistent ≠ optimal / complete</b>。Greedy 完全不看 g，只看 h。</li>
+<li><b>Trivial heuristic h≡0</b>：A* 退化为 UCS（不会"加速"，只是不变慢）。</li>
+<li><b>max(h_a, h_b)</b> 仍 admissible（若两者都 admissible）；min 不一定。</li>
+</ol>
+</div>
+
+<hr>
+
+<!-- ========================= LEC 4 ========================= -->
+<h2 id="l4">4. Local Search <span class="lec-tag">Lec 04</span></h2>
+
+<h3>4.1 何时用 Local Search？</h3>
+<p>当 path 不重要、<b>goal 配置本身</b>才是答案时（n-queens, TSP）。状态空间 = 所有完整配置；保持一个"当前"状态，迭代改进。<b>常数空间</b>，适合 online。</p>
+
+<h3>4.2 Hill Climbing</h3>
+<pre>function HILL-CLIMBING(problem):
+    current = initial state
+    loop:
+        neighbor = best successor of current
+        if neighbor.value ≤ current.value: return current
+        current = neighbor</pre>
+
+<p>"像在大雾里失忆地爬珠峰"。问题：</p>
+<ul>
+  <li><b>Local maxima</b>：被局部峰困住 → <b>random restarts</b></li>
+  <li><b>Plateaus / shoulders</b>：平地 → <b>random sideways moves</b>（但平地上可能死循环）</li>
+</ul>
+
+<h3>4.3 Simulated Annealing</h3>
+<p>偶尔允许"坏"移动，避免被困局部最优。</p>
+<pre>function SA(problem, schedule):
+    current = initial
+    for t = 1 to ∞:
+        T = schedule(t)
+        if T = 0: return current
+        next = random successor
+        ΔE = next.value - current.value
+        if ΔE > 0: current = next        # 永远接受好的
+        else:      current = next with prob e^(ΔE/T)   # 概率接受坏的</pre>
+
+<div class="note">
+<b>性质</b>：稳态 Boltzmann 分布 P(x) ∝ e<sup>E(x)/T</sup>。若 T 降得<b>足够慢</b>（可能要指数慢），收敛到全局最优。VLSI 布线等领域的主力。
+</div>
+
+<h3>4.4 Local Beam Search</h3>
+<p>K 个并行 local search，每步从所有 K 个状态的子代里挑最优 K 个。<b>关键</b>：和 K 个独立 search 不同 —— 它们"互相沟通"（哪边好往哪聚）。类比：演化。</p>
+
+<h3>4.5 Genetic Algorithms</h3>
+<p>用"自然选择"隐喻：按 fitness 选父代，两两 <b>crossover</b>，加 <b>mutation</b>。</p>
+
+<h3>4.6 连续空间</h3>
+<ol>
+  <li><b>离散化</b>：用网格 δ 划分。</li>
+  <li><b>随机扰动</b>：hill climbing / SA。</li>
+  <li><b>梯度方法</b>：</li>
+</ol>
+
+<div class="formula-block">
+梯度向量：∇f(x) = (∂f/∂x₁, ∂f/∂y₁, ...)<br>
+极值条件：∇f(x) = 0<br>
+<b>Gradient descent</b>：x ← x − α∇f(x)
+</div>
+
+<p>例：在罗马尼亚选 3 个机场最小化 ∑∑(x_a − x_c)² + (y_a − y_c)²，∂f/∂x₁ = ∑_{c∈C₁} 2(x₁ − x_c) → x₁ = mean of C₁。</p>
+
+<hr>
+
+<!-- ========================= LEC 5 ========================= -->
+<h2 id="l5">5. CSP I — Backtracking & Filtering <span class="lec-tag">Lec 05</span></h2>
+
+<h3>5.1 CSP 形式化</h3>
+<div class="formula-block">
+CSP = ⟨ <b>变量 X_i</b>, <b>值域 D_i</b>, <b>约束 C</b> ⟩<br>
+goal: 给所有变量赋值，满足所有约束（identification 问题，path 不重要）。
+</div>
+
+<h3>5.2 例子</h3>
+<table>
+<tr><th>问题</th><th>Variables</th><th>Domains</th><th>Constraints</th></tr>
+<tr><td>Map Coloring</td><td>每区域</td><td>{R,G,B}</td><td>相邻区域颜色不同</td></tr>
+<tr><td>N-Queens (Form 1)</td><td>每格 X_ij</td><td>{0,1}</td><td>∑X_ij = N，每行/列/对角线 ∑≤1</td></tr>
+<tr><td>N-Queens (Form 2)</td><td>每列一个 Q_i</td><td>{1..N}</td><td>两两不同行/对角</td></tr>
+<tr><td>Sudoku</td><td>每空格</td><td>{1..9}</td><td>行/列/3×3区 all-diff</td></tr>
+<tr><td>Cryptarithmetic</td><td>每字母+进位</td><td>{0..9}</td><td>列约束 + alldiff</td></tr>
+</table>
+
+<h3>5.3 约束类型</h3>
+<ul>
+  <li><b>Unary</b>：单变量（等价于缩 domain）</li>
+  <li><b>Binary</b>：两变量（→ binary constraint graph）</li>
+  <li><b>Higher-order</b>：3+ 变量（如 cryptarithmetic 进位）</li>
+  <li><b>Preferences (soft)</b>：每个赋值有 cost → 约束优化（之后 Bayes nets 会讲）</li>
+</ul>
+
+<h3>5.4 Constraint Graph</h3>
+<p>节点=变量，边=约束。算法用图结构加速（如 Tasmania 独立 → 整张图能分块解决）。</p>
+
+<h3>5.5 Backtracking Search</h3>
+<p>= <b>DFS + 变量排序 + 边走边查约束</b>。两个核心想法：</p>
+<ol>
+  <li>一次只给一个变量赋值（赋值可交换 → 固定顺序）</li>
+  <li>每赋一个值就检查与已赋值的冲突（incremental goal test）</li>
+</ol>
+
+<h3>5.6 Filtering（核心优化）</h3>
+
+<h4>Forward Checking</h4>
+<p>每次赋值后，从所有未赋值变量的 domain 中划掉违反约束的值。如果某 domain 空了，立即回溯。</p>
+
+<h4>Arc Consistency (AC-3)</h4>
+<div class="formula-block">
+<b>Arc X → Y is consistent</b> ⟺ 对每个 x ∈ D_X，都存在 y ∈ D_Y 使 (x,y) 满足约束。<br>
+若不满足，<b>从 tail 删值</b>（即从 D_X 删）。
+</div>
+
+<div class="warn">
+<b>关键操作</b>：从 X→Y 的<b>尾部 X</b> 删值；X 失去值后，所有<b>指向 X 的弧</b>都要重新检查。
+</div>
+
+<table>
+<tr><th></th><th>能否检测到 NT 和 SA 都不能蓝？</th></tr>
+<tr><td>Forward Checking</td><td>不能（只看已赋值变量出去的弧）</td></tr>
+<tr><td>Arc Consistency</td><td>能（更早发现失败）</td></tr>
+</table>
+
+<p>复杂度 O(n²d³)（可优化到 O(n²d²)）。检测所有未来失败是 NP-hard（等价于 SAT）。</p>
+
+<div class="warn">
+<b>Arc consistency 完成后可能</b>：唯一解 / 多个解 / 无解（自己不知道）。所以仍要在 backtracking 内部跑。
+</div>
+
+<div class="quiz">
+<b>📝 高频考点 · CSP（极常考）</b>
+
+<p><b>1. 判断约束类型（unary / binary / higher-order）</b></p>
+<p>关键：约束<b>同时</b>涉及几个变量。</p>
+<ul>
+<li>"Hugo 不能在位置 3 或 4" → 只看 Hugo 自己 → <b>unary</b></li>
+<li>"Frank 想紧挨 Grace" → 看 F 和 G → <b>binary</b></li>
+<li>"Advika 不想任何人挨着她" → 必须检查所有其他变量 → <b>higher-order</b>（"任何人"是关键词）</li>
+<li>"Iris 不想紧挨 Hugo" → 只 I 和 H → <b>binary</b>（注意区分上一条）</li>
+</ul>
+
+<p><b>2. LCV + Forward Checking 选值</b></p>
+<p>对每个候选值，模拟"先赋这个值，做 forward checking"，看<b>其他变量 domain 总共少多少</b>。少的就是 LCV。<br>
+例：6 个位置给"不想被挨着"的变量，<b>边角(1, 6)</b> 比中间损害小（只挪掉 2 个相邻位置而非 3 个）。</p>
+
+<p><b>3. AC-3 处理弧 X→Y 后入队哪些弧？</b></p>
+<div class="formula-block">
+若 X 的 domain 被削减：将所有 <b>(Z → X)</b>（X 的邻居 Z 指向 X 的弧）入队。<br>
+<span class="key">注意</span>：不重复入 (Y → X)，<b>不</b>入 (X → ...)。
+</div>
+<p>例：处理 (S → J) 后 S 的 domain 减少 → 入队 (J→S), (M→S)（J,M 都是 S 的邻居）。</p>
+
+<p><b>4. 处理 (X→Y) 后 X 的 domain 是什么？</b></p>
+<p>对 X 的每个值 x，检查 Y 中是否有合法 y。没有的 x 删掉。<br>
+注意"合法"包括<b>所有相关约束</b>（不只是 X-Y 约束，还有 "不能在同位置" 等隐含约束）。</p>
+
+<p><b>5. Cutset / Residual CSP</b></p>
+<ul>
+<li>Cutset 大小 c → 实例化 c 个变量的所有组合（每个 d 个值，共 d^c 种），每种得到一个 <b>residual CSP</b></li>
+<li>Residual CSP 可能<b>是</b>也可能<b>不是</b>原 CSP 的解（cutset 赋值可能违反约束）</li>
+<li>Cutset 的目的：让 residual CSP 的 constraint graph 是<b>树</b> → O(n·d²) 解</li>
+</ul>
+
+<p><b>6. K-Consistency 概念题</b></p>
+<ul>
+<li>1-consistent = node consistent（unary 约束满足）</li>
+<li>2-consistent = arc consistent</li>
+<li>Strong n-consistent → 无需 backtracking</li>
+</ul>
+</div>
+
+<hr>
+
+<!-- ========================= LEC 6 ========================= -->
+<h2 id="l6">6. CSP II — Ordering / Structure / Iterative <span class="lec-tag">Lec 06</span></h2>
+
+<h3>6.1 K-Consistency</h3>
+<ul>
+  <li><b>1-consistent (node)</b>：每个变量自身的 unary 约束被满足</li>
+  <li><b>2-consistent (arc)</b>：对每对变量，任意单变量赋值都能扩展到另一个</li>
+  <li><b>k-consistent</b>：对 k-1 变量的任意一致赋值，可扩展到第 k 个变量</li>
+  <li><b>Strong k-consistency</b>：同时是 k, k-1, ..., 1 consistent</li>
+</ul>
+
+<div class="good">
+<b>定理</b>：strong n-consistency ⟹ 无需 backtracking 即可解（任意赋值都能扩展）。<br>
+代价：建立 strong n-consistency 极其昂贵。考试主要要会 k=2（arc consistency）。
+</div>
+
+<h3>6.2 Ordering 启发式</h3>
+
+<h4>MRV: Minimum Remaining Values</h4>
+<p>选 domain 中剩余合法值最少的变量（"most constrained variable"）。<b>Fail-fast</b>：早点发现失败。</p>
+
+<h4>LCV: Least Constraining Value</h4>
+<p>选给定变量后，最少限制其他变量的<b>值</b>。原因：留多点选项给后面，更可能成功。</p>
+
+<p>MRV + LCV + AC 让 <b>1000 queens 可解</b>。</p>
+
+<h3>6.3 Problem Structure</h3>
+
+<h4>独立子问题</h4>
+<p>若图能分成多个独立连通分量，每个有 c 变量，复杂度从 O(d<sup>n</sup>) 降到 O((n/c)·d<sup>c</sup>) —— 线性 n！</p>
+
+<h4>Tree-Structured CSP</h4>
+<div class="good">
+<b>定理</b>：若 constraint graph 是树，CSP 可在 <b>O(n·d²)</b> 解（vs 一般 O(d<sup>n</sup>)）。
+</div>
+
+<p><b>算法</b>：</p>
+<ol>
+  <li><b>Order</b>：选 root，按 parent-before-child 拓扑排序</li>
+  <li><b>Backward (remove)</b>：i = n→2，对每个 X_i 做 RemoveInconsistent(Parent(X_i), X_i)</li>
+  <li><b>Forward (assign)</b>：i = 1→n，按顺序给 X_i 赋与 Parent(X_i) 一致的值，无回溯</li>
+</ol>
+
+<p>为什么不行于带环图？两个 arc 各自一致，但它们的值可能冲突（"两个 parent 吵架"）。</p>
+
+<h4>Cutset Conditioning</h4>
+<p>找最小变量集，去掉这些变量（实例化）后图变树。Cutset 大小 c → O(d<sup>c</sup> · (n−c) · d²)。</p>
+
+<h4>Tree Decomposition</h4>
+<p>把图转为"mega-variable"的树，每个 mega-variable 编码原 CSP 一部分；子问题间在共享变量上一致。</p>
+
+<h3>6.4 Iterative Improvement (Min-Conflicts)</h3>
+<p>对完整赋值反复改进：</p>
+<pre>while not solved:
+    挑一个冲突变量
+    赋它一个 min-conflicts 值（违反约束最少）</pre>
+
+<div class="good">
+<b>惊人结果</b>：min-conflicts 对随机初始的 n-queens（n 大到一千万）近乎常数时间解决，对几乎所有随机 CSP 也快，除了一个临界比率附近的窄区间。
+</div>
+
+<hr>
+
+<!-- ========================= LEC 7 ========================= -->
+<h2 id="l7">7. Adversarial Search <span class="lec-tag">Lec 07</span></h2>
+
+<h3>7.1 游戏分类</h3>
+<ul>
+  <li>Deterministic / Stochastic</li>
+  <li>1 / 2 / N 玩家</li>
+  <li>Zero-sum / general（zero-sum: 一方最大化即另一方最小化）</li>
+  <li>Perfect / Imperfect information</li>
+</ul>
+
+<h3>7.2 Minimax</h3>
+
+<pre>def value(state):
+    if terminal: return utility(state)
+    if MAX's turn: return max-value(state)
+    if MIN's turn: return min-value(state)
+
+def max-value(state):
+    v = -∞
+    for s' in successors(state):
+        v = max(v, value(s'))
+    return v
+
+def min-value(state):
+    v = +∞
+    for s' in successors(state):
+        v = min(v, value(s'))
+    return v</pre>
+
+<p>性质：对完美对手最优。对手不完美时？仍然安全但<b>非最优</b>（可能错过抓利用机会）。</p>
+<p>效率：和穷举 DFS 一样 <b>Time O(b<sup>m</sup>), Space O(bm)</b>。象棋 b≈35, m≈100 → 不可能完整求解。</p>
+
+<h3>7.3 Alpha-Beta Pruning</h3>
+
+<pre>def max-value(state, α, β):
+    v = -∞
+    for s' in successors:
+        v = max(v, value(s', α, β))
+        if v ≥ β: return v       # β-cut: MIN 不会让 MAX 到这里
+        α = max(α, v)
+    return v
+
+def min-value(state, α, β):
+    v = +∞
+    for s' in successors:
+        v = min(v, value(s', α, β))
+        if v ≤ α: return v       # α-cut
+        β = min(β, v)
+    return v</pre>
+
+<ul>
+  <li>α = MAX 在 root→当前路径上的最佳保证</li>
+  <li>β = MIN 在 root→当前路径上的最佳保证</li>
+  <li><b>根节点的 minimax 值不变</b>；中间节点可能错（包括根的孩子！所以 naïve 版本不能直接选动作）</li>
+  <li>完美排序下：Time 从 O(b<sup>m</sup>) → <b>O(b<sup>m/2</sup>)</b>，可达深度翻倍</li>
+  <li>属 <b>metareasoning</b>（推理"该如何计算"）</li>
+</ul>
+
+<h3>7.4 Resource Limits & Evaluation Function</h3>
+<p>真实游戏无法搜到叶 → <b>depth-limited search</b> + <b>evaluation function</b> 替代 terminal utility。</p>
+
+<div class="formula-block">
+常见形式：线性加权特征<br>
+Eval(s) = w₁·f₁(s) + w₂·f₂(s) + ... + w_n·f_n(s)<br>
+例：象棋 f₁ = 白后数 − 黑后数 等。
+</div>
+
+<ul>
+  <li>越深越好；eval 不准时，深度可"稀释"误差</li>
+  <li>用 <b>iterative deepening</b> 做 anytime 算法</li>
+  <li>好的 eval 还能帮 α-β 排序（more pruning）</li>
+</ul>
+
+<div class="warn">
+<b>Why Pacman Starves</b>：replanning agent 在 horizon 内看不到点数差异时，可能在豆子和"等待"之间反复横跳。
+</div>
+
+<h3>7.5 Monte Carlo Tree Search (MCTS) <span style="color:#c0392b">⚠️ 课件不重，教材里有，考过</span></h3>
+
+<p>面对 Go 那种巨大分支因子，minimax 不可行 → MCTS。两个思想：</p>
+<ul>
+  <li><b>Rollout 估值</b>：从状态 s 用某 policy（如随机）模拟到游戏结束很多次，记胜率作为 s 的估值</li>
+  <li><b>Selective search</b>：不均匀分配 rollout，把更多次试在"有希望"的子节点</li>
+</ul>
+
+<h4>UCB1 公式</h4>
+<div class="formula-block">
+UCB1(n) = <b>U(n) / N(n)</b> &nbsp;+&nbsp; <b>C · √( ln N(parent) / N(n) )</b>
+</div>
+<ul>
+  <li>N(n) = 经过 n 的 rollout 数；U(n) = 这些 rollout 中 Player(parent(n)) 的胜数</li>
+  <li>第一项："promising"（exploitation）；第二项："uncertain"（exploration）</li>
+  <li>C 由用户调，平衡探索/利用</li>
+</ul>
+
+<h4>UCT 算法（MCTS + UCB）</h4>
+<ol>
+  <li>用 UCB1 从根往下走，直到到未扩展的叶</li>
+  <li>给该叶加一个新孩子，从那里做一次 rollout 得胜负</li>
+  <li>沿路回传，更新 N 和 U</li>
+</ol>
+<p>重复多次后，选 root 下 <b>N 最大</b>的孩子作为行动。N → ∞ 时 UCT 趋近 minimax。</p>
+
+<div class="quiz">
+<b>📝 高频考点 · 博弈树</b>
+
+<p><b>1. α-β 剪枝模拟题（极常考）</b></p>
+<ul>
+<li>从左到右遍历，<b>prune on equality</b>（即 v ≥ β 或 v ≤ α 时剪）</li>
+<li>记口诀：MAX 节点的 v 想≥β 则剪（MIN 不会让到这）；MIN 节点的 v ≤α 则剪</li>
+<li><b>哪些节点被剪？</b> 模拟一遍，被剪节点 = 完全未访问的</li>
+<li><b>题型：交换两节点值后 0 剪枝</b> → 数字按"左小右大"顺序排列（ABFDH 这种）</li>
+<li>α-β 后<b>根值正确，中间值可能错</b>，包括根的孩子</li>
+</ul>
+
+<p><b>2. 非标准 min（f(x) 变形）</b></p>
+<p>题目可能换成"min |x|"或"min (x−188)²"。关键：</p>
+<ul>
+<li>把 hex 节点看作"用 f 排序后选最小 f 对应的孩子"，<b>返回原 x 值</b>给 max</li>
+<li>例：孩子 [4,−5,−9,3]，min |x| → |4|=4, |−5|=5, |−9|=9, |3|=3 → 选 x=3</li>
+<li>什么 f 等价于标准 min？答：在所有叶值范围内<b>单调递增</b>的 f（如 log, ReLU, e^x, x+5, x−5），<b>不</b>包括 1/x（在正数上递减）</li>
+</ul>
+
+<p><b>3. 多智能体效用 (multi-agent utilities)</b></p>
+<ul>
+<li>terminal 是 utility tuple；每层节点最大化对应分量</li>
+<li><b>一般不能剪枝</b>，因为各玩家目标独立，一个分量的好坏不能限制另一分量</li>
+</ul>
+
+<p><b>4. MCTS 需要哪些量来算 UCB？</b>（典型多选）<br>
+<span class="key">N(s), U(s), N(parent(s))</span>。<b>不</b>需要每个孩子的 N。</p>
+
+<p><b>5. 评估函数设计 (eval function)</b><br>
+当对手最优时，agent 要避免到达<b>"对手一步赢"</b>的状态。常用：<br>
+<code>f(s) = −1 if s 是 "one move from terminal", else 0</code>（任何 a&lt;b 都行）。</p>
+
+<p><b>6. 何时游戏树无限？</b><br>
+当游戏没有强制终止规则、玩家"理性"地避开必败状态时。例：sp24 排书游戏。</p>
+</div>
+
+<hr>
+
+<!-- ========================= LEC 8 ========================= -->
+<h2 id="l8">8. Expectimax · Utilities · Rationality <span class="lec-tag">Lec 08</span></h2>
+
+<h3>8.1 Expectimax</h3>
+<p>不是对手 vs 我，而是<b>随机</b>结果（骰子、随机 ghost、动作可能失败）。</p>
+
+<pre>def value(state):
+    if terminal: return utility
+    if MAX: return max-value(state)
+    if EXP (chance): return exp-value(state)
+
+def exp-value(state):
+    v = 0
+    for s' in successors:
+        p = P(s')
+        v += p * value(s')
+    return v</pre>
+
+<div class="warn">
+<b>Expectimax 不能像 α-β 那样剪枝</b>（一般地）—— 一个孩子的极端值能拉高/拉低期望，必须看完所有孩子。
+</div>
+
+<h3>8.2 Optimism / Pessimism</h3>
+<table>
+<tr><th>用 Minimax</th><th>用 Expectimax</th></tr>
+<tr><td>对随机环境过度悲观</td><td>对真正对抗环境过度乐观</td></tr>
+</table>
+<p>实验结果：Pacman 用对应算法对应 ghost 表现最好。错配会大幅掉分。</p>
+
+<h3>8.3 Mixed: Expectiminimax</h3>
+<p>如 Backgammon，每个 min/max 之后加一个 chance 层（骰子）。Depth 2 = 20·(21·20)³ ≈ 10⁹。深度越深，单节点对结果影响越小（被概率稀释），所以限深损失也小，但剪枝更难。</p>
+
+<h3>8.4 Multi-Agent Utilities</h3>
+<p>非零和 / 多人游戏：terminal 是<b>效用元组</b>，每个玩家最大化自己的分量。能出现合作/竞争混合。</p>
+
+<h3>8.5 MEU Principle</h3>
+<div class="formula-block">
+<b>Maximum Expected Utility</b>：rational agent 选 a* = argmax_a E[U(s')|s,a]
+</div>
+
+<h3>8.6 Rational Preferences</h3>
+<p>满足如下公理 → 行为可由效用函数表示：</p>
+<ul>
+  <li><b>Transitivity</b>: A≻B, B≻C ⟹ A≻C（违反会被"金钱泵"骗光）</li>
+  <li>Orderability, Continuity, Substitutability, Monotonicity, Decomposability</li>
+</ul>
+
+<div class="good">
+<b>von Neumann–Morgenstern (1944)</b>：满足这些公理的偏好，存在效用 U 使得：<br>
+U(A) > U(B) ⟺ A ≻ B；U(L) = ∑p_i·U(prize_i)。
+</div>
+
+<h3>8.7 Utility Scales & Money</h3>
+<ul>
+  <li>Minimax 对效用<b>单调变换</b>不变（只看序）；expectimax 对<b>量级敏感</b>（要算期望）</li>
+  <li>正线性变换不影响行为</li>
+  <li>钱本身不是效用，但 U(\$) 是 concave → 人 <b>risk-averse</b>。深陷债务时反而 risk-prone。</li>
+  <li><b>Insurance</b>：你愿意付 \$100 把 [0.5,\$1000;0.5,\$0]（EMV=\$500）换成确定 \$400 → 保险存在的原因</li>
+</ul>
+
+<h3>8.8 Allais Paradox</h3>
+<p>多数人选 B≻A 且 C≻D，但这违反效用公理 → 真人非完全理性。</p>
+
+<div class="quiz">
+<b>📝 高频考点 · Expectimax & 效用</b>
+<ol>
+<li><b>Expectimax 计算</b>：chance 节点 = ∑ p · child。给定概率和孩子值能口算。</li>
+<li><b>Expectimax vs Minimax 选哪个</b>：对手随机 / 环境随机 → expectimax；对手 optimal → minimax；不知道 → minimax 更保守。</li>
+<li><b>Risk-averse</b>：U 是 concave，效用(均值) > 期望(效用) → 愿意付保险费。</li>
+<li><b>效用是序数还是基数？</b> 只有确定 prize 比较时是序数；含 lottery（求期望）时要基数。</li>
+<li><b>哪些变换不改变行为</b>：正线性 aU+b (a&gt;0)；minimax 多接受任何单调变换。</li>
+</ol>
+</div>
+
+<hr>
+
+<!-- ========================= LEC 9 ========================= -->
+<h2 id="l9">9. MDPs I · Value Iteration <span class="lec-tag">Lec 09</span></h2>
+
+<h3>9.1 MDP 定义</h3>
+<div class="formula-block">
+MDP = ⟨ S, A, T(s,a,s')=P(s'|s,a), R(s,a,s'), s₀, γ ⟩<br>
+"Markov"：动作结果只依赖<b>当前 state</b>。<br>
+解 = <b>policy</b> π: S → A（不是 plan，因为有随机性）。
+</div>
+
+<h3>9.2 Grid World</h3>
+<ul>
+  <li>80% 按预期方向走，10% 左偏，10% 右偏（"noisy movement"）</li>
+  <li>撞墙则原地不动</li>
+  <li>每步 living reward（可负，鼓励快走完）+ 终态大奖</li>
+</ul>
+
+<h3>9.3 Discounting</h3>
+<div class="formula-block">
+U([r₀, r₁, r₂, ...]) = r₀ + γr₁ + γ²r₂ + ... = ∑ γ<sup>t</sup>r_t<br>
+γ ∈ (0,1)；小 γ → 短视
+</div>
+
+<p>三个理由：</p>
+<ol>
+  <li>早奖励通常更有价值</li>
+  <li>帮算法<b>收敛</b>（无限和有界）</li>
+  <li>stationary preferences 定理：满足平稳偏好 ⟺ 加法或贴现效用</li>
+</ol>
+
+<h3>9.4 处理无限步</h3>
+<ul>
+  <li><b>Finite horizon</b>：T 步截断（→ 非平稳 policy，依赖剩余步数）</li>
+  <li><b>Discounting</b>：γ&lt;1 → 有限和</li>
+  <li><b>Absorbing state</b>：保证每个 policy 都终止</li>
+</ul>
+
+<h3>9.5 Optimal Quantities</h3>
+<div class="formula-block">
+<b>V*(s)</b> = 从 s 出发按最优策略的期望效用<br>
+<b>Q*(s,a)</b> = 从 s 取动作 a，之后最优的期望效用<br>
+<b>π*(s)</b> = argmax_a Q*(s,a)
+</div>
+
+<h3>9.6 Bellman 最优方程</h3>
+<div class="formula-block">
+V*(s) = max<sub>a</sub> ∑<sub>s'</sub> T(s,a,s') [R(s,a,s') + γV*(s')]<br>
+Q*(s,a) = ∑<sub>s'</sub> T(s,a,s') [R(s,a,s') + γV*(s')]<br>
+V*(s) = max<sub>a</sub> Q*(s,a)
+</div>
+
+<h3>9.7 Value Iteration</h3>
+<pre>V₀(s) = 0 for all s
+repeat:
+    for each s:
+        V_{k+1}(s) = max_a ∑_{s'} T(s,a,s')[R(s,a,s') + γ·V_k(s')]
+until max_s |V_{k+1}(s) − V_k(s)| < ε</pre>
+
+<ul>
+  <li>每次迭代 O(S²·A)</li>
+  <li>收敛到唯一 V*</li>
+  <li>V_k(s) 解释为<b>"还剩 k 步可走"</b>时的最优值（depth-k expectimax）</li>
+  <li>Policy 经常比 V 早收敛</li>
+</ul>
+
+<details>
+<summary>收敛证明草图</summary>
+<p>把 V_k, V_{k+1} 看作深度 k+1 的 expectimax 计算，只在最底层不同（V_k 把那层当 0，V_{k+1} 用真实 reward）。那一层最坏被 R 限制，但被 γ<sup>k</sup> 折现 → |V_k − V_{k+1}| ≤ γ<sup>k</sup>·R_max → 收敛。</p>
+</details>
+
+<h3>9.8 Markov property 形式化（教材）</h3>
+<div class="formula-block">
+P(S<sub>t+1</sub> | S<sub>t</sub>, A<sub>t</sub>, S<sub>t−1</sub>, A<sub>t−1</sub>, ..., S<sub>0</sub>) = P(S<sub>t+1</sub> | S<sub>t</sub>, A<sub>t</sub>) = T(s, a, s′)
+</div>
+<p>"给定现在，未来与过去独立"。这就是为何 transition function 只需写 T(s, a, s′)，不依赖历史。</p>
+
+<h3>9.9 Discounted utility 上界（教材）</h3>
+<div class="formula-block">
+U = ∑<sub>t=0</sub><sup>∞</sup> γ<sup>t</sup> R(s<sub>t</sub>, a<sub>t</sub>, s<sub>t+1</sub>) ≤ ∑<sub>t=0</sub><sup>∞</sup> γ<sup>t</sup> R<sub>max</sub> = <b>R<sub>max</sub> / (1−γ)</b>
+</div>
+<p>γ ∈ (0, 1) 保证有界。负 γ 没物理意义（reward 正负交替）。</p>
+
+<h3>9.10 Bellman operator 是 γ-收缩（教材完整证明）</h3>
+<p>定义 Bellman operator B：(BV)(s) = max<sub>a</sub> ∑ T[R + γV(s′)]。</p>
+
+<div class="formula-block">
+||BV − BV′||<sub>∞</sub> ≤ γ · ||V − V′||<sub>∞</sub>
+</div>
+
+<details>
+<summary>证明步骤（教材逐步推导）</summary>
+<p>用关键不等式 |max f − max h| ≤ max |f − h|：</p>
+<pre>|BV(s) − BV′(s)|
+  = | max_a Σ T[R + γV(s′)]  −  max_a Σ T[R + γV′(s′)] |
+  ≤ max_a | Σ T[R + γV] − Σ T[R + γV′] |      （上面不等式）
+  = max_a | γ Σ T(s,a,s′) (V(s′) − V′(s′)) |
+  ≤ γ max_a Σ T(s,a,s′) · max_s′ |V(s′) − V′(s′)|
+  = γ · ||V − V′||∞                              （T 求和=1）</pre>
+<p>因为是 γ-contraction，Banach 不动点定理 → V* 唯一，VI 收敛。</p>
+</details>
+
+<h3>9.11 Q-Value Iteration（教材，重要补充）</h3>
+<p>除了 VI 求 V，也可以直接迭代 Q：</p>
+<div class="formula-block">
+Q<sub>k+1</sub>(s, a) = ∑<sub>s′</sub> T(s, a, s′) [R(s, a, s′) + γ · max<sub>a′</sub> Q<sub>k</sub>(s′, a′)]
+</div>
+<p>这就是后面 Q-learning 的"目标"。Q-value iteration 需要 T, R；Q-learning 不需要。</p>
+
+<hr>
+
+<!-- ========================= LEC 10 ========================= -->
+<h2 id="l10">10. MDPs II · Policy Methods <span class="lec-tag">Lec 10</span></h2>
+
+<h3>10.1 Bellman Equations 复习</h3>
+<p>"To be optimal: 第一步走对，然后继续最优。"</p>
+
+<h3>10.2 Policy Evaluation</h3>
+<p>给定 π，求 V<sup>π</sup>。Bellman 退化为<b>无 max</b>的线性等式：</p>
+<div class="formula-block">
+V<sup>π</sup>(s) = ∑<sub>s'</sub> T(s, π(s), s') [R(s, π(s), s') + γV<sup>π</sup>(s')]
+</div>
+
+<p>两种解法：</p>
+<ol>
+  <li><b>迭代</b>：把上式当更新规则，O(S²) 每轮（比 VI 快，因为只一个 action）</li>
+  <li><b>直接解线性系统</b>：n 个方程 n 个未知数</li>
+</ol>
+
+<h3>10.3 Policy Extraction</h3>
+<p>从 V*（或近似 V）得到 policy：</p>
+<div class="formula-block">
+π*(s) = argmax<sub>a</sub> ∑<sub>s'</sub> T(s,a,s') [R(s,a,s') + γV*(s')]
+</div>
+
+<div class="key">
+从 V 抽 policy 要 mini-expectimax（需要 T, R）；从 Q 抽：<b>π*(s) = argmax_a Q*(s,a)</b>，trivial！这是为什么 RL 学 Q 不学 V。
+</div>
+
+<h3>10.4 Policy Iteration</h3>
+<pre>初始化 π₀ 任意
+repeat:
+    # 1. Evaluation: 算出 V^π_i 直到收敛
+    # 2. Improvement: π_{i+1}(s) = argmax_a ∑ T[R + γV^π_i]
+until π 不变</pre>
+
+<div class="good">
+<b>对比</b>：
+<ul>
+  <li><b>Value Iteration</b>：每轮更新 V（隐式更新 π），每轮 O(S²A) 都"贵"</li>
+  <li><b>Policy Iteration</b>：内层多轮便宜的 PE（O(S²)，固定 π 不取 max）+ 一轮"贵"的 improvement</li>
+  <li>两者都是<b>动态规划</b>，都收敛到 π*，PI 通常更快</li>
+</ul>
+</div>
+
+<h3>10.5 总结表</h3>
+<table>
+<tr><th>目标</th><th>方法</th></tr>
+<tr><td>算最优 V* / Q* / π*</td><td>Value Iteration 或 Policy Iteration</td></tr>
+<tr><td>评估固定 π</td><td>Policy Evaluation</td></tr>
+<tr><td>从 V 得 π</td><td>Policy Extraction（one-step lookahead）</td></tr>
+</table>
+
+<h3>10.6 Offline vs Online</h3>
+<p>解 MDP 是 <b>offline planning</b>（要知道 T, R，纯算）。如果 T/R 未知 → 必须真正去"动作"，这就是 RL。RL 关键词：<b>exploration, exploitation, regret, sampling</b>。</p>
+
+<div class="quiz">
+<b>📝 高频考点 · MDP</b>
+<ol>
+<li><b>T/R 表行数计算</b>：|S<sub>非终态</sub>| × |A| × |S′|。注意终态作为 s 不会出现（无动作）。例：2 个非终态 × 3 个动作 × 3 个 s′（含终态） = <b>18</b>。</li>
+<li><b>哪行 T=0 / R=N/A</b>：对每个 (s,a)，可能 s′ 不可达 → T=0。bust 动作必到终态 X，所以 (Left, Bust Left, Left) = 0。</li>
+<li><b>terminal state 的 V</b>：恒为 0（无后续 reward）。</li>
+<li><b>有限/无限 horizon</b>：finite → 非平稳 policy（依赖剩余步数）；infinite + γ&lt;1 → 平稳 policy。</li>
+<li><b>"哪些算法能算 V*?"</b>：
+  <ul>
+    <li>VI / PI 需要 T 和 R</li>
+    <li>给定固定 π 求 V<sup>π</sup>：Policy Evaluation（迭代或解线性系统）</li>
+    <li>没有 T 但有样本：Direct eval / TD 估 V<sup>π</sup>；Q-learning 估 Q*</li>
+  </ul>
+</li>
+<li><b>γ=1</b>：discounting 无效。如果无 terminal 可能无限 reward；有 terminal 时 OK。</li>
+<li><b>Living reward 调参</b>：越负 → 越想早结束（哪怕扑负 terminal）；越正 → 不想结束（活着就赚）。</li>
+</ol>
+</div>
+
+<hr>
+
+<!-- ========================= LEC 11 ========================= -->
+<h2 id="l11">11. Reinforcement Learning I <span class="lec-tag">Lec 11</span></h2>
+
+<h3>11.1 RL 设定</h3>
+<p>仍是 MDP，但 <b>T 和 R 未知</b>。必须真正动作、观察 (s, a, r, s') 学习。</p>
+
+<table>
+<tr><th></th><th>Offline (MDP)</th><th>Online (RL)</th></tr>
+<tr><td>知道 T,R?</td><td>是</td><td>否</td></tr>
+<tr><td>方法</td><td>VI/PI</td><td>Q-learning, TD, ...</td></tr>
+</table>
+
+<h3>11.2 Model-Based Learning</h3>
+<ol>
+  <li>收集经验，<b>统计</b> 估计 T̂(s,a,s') 和 R̂(s,a,s')</li>
+  <li>用 VI/PI 解估计的 MDP</li>
+</ol>
+<p>样本越多估计越准。</p>
+
+<h3>11.3 Model-Free: Passive RL</h3>
+<p>给定 π，估计 V<sup>π</sup>。不是 offline——你真的在 act，但 π 固定。</p>
+
+<h4>Direct Evaluation</h4>
+<p>每次访问 s，记下后续 discounted reward 总和；最终对所有样本平均。</p>
+<ul>
+  <li>✅ 简单，不需 T/R，最终正确</li>
+  <li>❌ 浪费状态间连接信息（B 和 E 都到 C，但分别学）→ 慢</li>
+</ul>
+
+<h4>Temporal Difference (TD) Learning</h4>
+<div class="formula-block">
+sample = R(s, π(s), s') + γV<sup>π</sup>(s')<br>
+<b>V(s) ← (1−α)V(s) + α·sample</b><br>
+等价：V(s) ← V(s) + α·(sample − V(s))
+</div>
+
+<ul>
+  <li>每次转移都更新（不用等回合结束）</li>
+  <li><b>Exponential moving average</b>：最近样本权重大；α 逐渐减小可收敛</li>
+  <li>仍只能评估 π；要选动作需要 T,R 或 Q 值</li>
+</ul>
+
+<h3>11.4 Active RL: Q-Learning</h3>
+<p>不是被动跟 π，而是自己选动作学最优 Q*。</p>
+
+<h4>Q-Value Iteration（model-based 视角）</h4>
+<div class="formula-block">
+Q<sub>k+1</sub>(s,a) = ∑<sub>s'</sub> T(s,a,s')[R(s,a,s') + γ·max<sub>a'</sub> Q<sub>k</sub>(s',a')]
+</div>
+
+<h4>Q-Learning（model-free，sample-based）</h4>
+<div class="formula-block">
+收到 sample (s, a, r, s')：<br>
+sample = r + γ·max<sub>a'</sub> Q(s', a')<br>
+<b>Q(s,a) ← (1−α)·Q(s,a) + α·sample</b>
+</div>
+
+<div class="good">
+<b>惊人定理</b>：Q-learning 收敛到 Q*，<b>即使你按非最优策略行动</b>（off-policy）。条件：
+<ol>
+  <li>探索足够（每个 (s,a) 被访问无限次）</li>
+  <li>α 最终足够小</li>
+  <li>但 α 不能下降太快</li>
+</ol>
+</div>
+
+<div class="quiz">
+<b>📝 高频考点 · RL I</b>
+<ol>
+<li><b>给样本估 V<sup>π</sup>（fixed policy）</b>：Direct Evaluation 或 TD。<b>不能</b>用 VI/PI（需要 T）。Q-learning 估 V*，<b>不</b>是 V<sup>π</sup>。</li>
+<li><b>给随机 policy 样本估 V*</b>：只有 <b>Q-learning</b>（off-policy）。Direct/TD 是 passive，只能学行动 policy 的值。</li>
+<li><b>Q-update 算术（必考）</b>：
+<div class="formula-block">
+Q(s,a) ← (1−α)·Q(s,a) + α·[r + γ·max<sub>a′</sub> Q(s′, a′)]
+</div>
+注意几点：
+<ul>
+<li>用<b>原始</b> Q 值算 max（即使后续样本要用 Q，先按这一步的"旧"表）</li>
+<li>到 <b>terminal</b> 时 max Q(s′, ·) = <b>0</b></li>
+<li>多个样本顺序处理，每步用<b>当时</b>的表</li>
+</ul>
+例：(A, Buy, C, 0), γ=1, α=0.5，原 Q(A,Buy)=0，原 max Q(C,·)=4 → 新 Q(A,Buy) = 0.5·0 + 0.5·(0+4) = <b>2</b>。
+</li>
+</ol>
+</div>
+
+<hr>
+
+<!-- ========================= LEC 12 ========================= -->
+<h2 id="l12">12. Reinforcement Learning II <span class="lec-tag">Lec 12</span></h2>
+
+<h3>12.1 整体框架</h3>
+<table>
+<tr><th></th><th>Known MDP (offline)</th><th>Unknown MDP, Model-Based</th><th>Unknown MDP, Model-Free</th></tr>
+<tr><td>求 V*, Q*, π*</td><td>VI / PI</td><td>VI/PI on 估计MDP</td><td><b>Q-learning</b></td></tr>
+<tr><td>评估固定 π</td><td>Policy Evaluation</td><td>PE on 估计MDP</td><td>Direct eval / TD</td></tr>
+</table>
+
+<h3>12.2 Exploration vs Exploitation</h3>
+
+<h4>ε-greedy</h4>
+<ul>
+  <li>每步 ε 概率随机，1−ε 概率按当前 policy</li>
+  <li>能探索全空间，但学完仍乱晃 → 让 ε 随时间衰减</li>
+</ul>
+
+<h4>Exploration Function</h4>
+<div class="formula-block">
+f(u, n) = u + k/n &nbsp;&nbsp;（"乐观加成"）<br>
+修改 Q-update：<br>
+Q(s,a) ← (1−α)Q(s,a) + α·[r + γ·max<sub>a'</sub> <b>f</b>(Q(s',a'), N(s',a'))]
+</div>
+<p>未访问够的 (s,a) 给乐观估计 → 倾向于探索；bonus 还<b>反向传播</b>到通往未知的状态。</p>
+
+<h3>12.3 Regret</h3>
+<p>就算最终学到最优，路上犯的错有代价 → <b>regret</b> = 期望损失之和。最小化 regret 比"最终最优"要求更高。Random exploration 和 exploration function 都最终最优，但前者 regret 高。</p>
+
+<h3>12.4 Approximate Q-Learning（函数近似）</h3>
+
+<p>问题：状态空间太大，Q-table 存不下，也不可能都访问。<b>泛化</b>到相似状态。</p>
+
+<h4>Feature-based representation</h4>
+<p>用一组特征 f₁(s,a), f₂(s,a), ... 描述 (s,a)。例 Pacman：到最近 ghost 距离、到最近 dot 距离、是否在 tunnel 中等。</p>
+
+<div class="formula-block">
+Q(s,a) = w₁·f₁(s,a) + w₂·f₂(s,a) + ... + w_n·f_n(s,a)
+</div>
+
+<h4>Update（线性回归视角）</h4>
+<div class="formula-block">
+difference = [r + γ·max<sub>a'</sub> Q(s', a')] − Q(s, a)<br>
+<b>w_i ← w_i + α · difference · f_i(s, a)</b>
+</div>
+
+<p>直观：意外坏事发生 → 减小当时 "on" 的特征对应权重（"怪罪"这些特征）。</p>
+
+<ul>
+  <li>✅ 经验压缩成几个权重，能泛化到没见过的状态</li>
+  <li>❌ 共享特征的状态实际价值可能很不同 → 函数表达力是瓶颈</li>
+  <li>⚠️ 高次多项式 → overfitting，限制 capacity 反而好</li>
+</ul>
+
+<h3>12.5 Policy Search</h3>
+<p>有时<b>能赢游戏的</b>特征-policy 和<b>最准估 V/Q 的</b> policy 不一样：</p>
+<ul>
+  <li>Q-learning 优化 <b>modeling</b>（让 Q 接近真值）</li>
+  <li>动作选择只关心 <b>prediction</b>（Q 值的<b>排序</b>正确就够）</li>
+</ul>
+
+<p>简单 policy search：从 Q-learning 得初始 w，然后<b>爬山</b>调 w：上下扰动 → 跑很多回合看胜率/分数。问题：评估开销大，特征多时不可行。</p>
+
+<div class="quiz">
+<b>📝 高频考点 · RL II</b>
+
+<p><b>1. 哪些 exploration policy 能让 Q-learning 收敛？</b></p>
+<p>需要每个 (s,a) 被访问<b>无限次</b>。所以：</p>
+<ul>
+  <li>✅ 均匀随机 / ε-greedy（ε&gt;0 不衰减太快）</li>
+  <li>❌ 总选当前最优（可能永远不试某动作）</li>
+  <li>❌ 只在 {Buy, Sell} 间选（Hold 概率=0）</li>
+</ul>
+
+<p><b>2. α = 1 会收敛吗？</b></p>
+<p><b>不会</b>。α=1 等于"完全替换"旧估计，每次只看最新一个样本，剧烈震荡。要求 α 随时间衰减（但不能太快，如 ∑α=∞ 且 ∑α²&lt;∞）。</p>
+
+<p><b>3. exploration function 鼓励"少访问"动作的形式</b></p>
+<p>判断 f(u, n) 是否鼓励 explore：当 n 小时 f 大、n 大时 f 小（关于 n 递减）。</p>
+<table>
+<tr><th>f(u, n)</th><th>鼓励 explore?</th></tr>
+<tr><td>u + k/n</td><td>✅（经典）</td></tr>
+<tr><td>1/n</td><td>✅</td></tr>
+<tr><td>e<sup>−n</sup> · u</td><td>✅（n 大时压平）</td></tr>
+<tr><td>u + n</td><td>❌（越访问越想去）</td></tr>
+<tr><td>u · n</td><td>❌</td></tr>
+</table>
+
+<p><b>4. Approximate Q-learning 更新</b></p>
+<div class="formula-block">
+difference = [r + γ · max<sub>a′</sub> Q(s′, a′)] − Q(s, a)<br>
+<b>w<sub>i</sub> ← w<sub>i</sub> + α · difference · f<sub>i</sub>(s, a)</b>
+</div>
+<p>注意：所有 active feature 的权重一起调，幅度按 f<sub>i</sub> 缩放。</p>
+
+<p><b>5. Modeling vs Prediction</b></p>
+<ul>
+<li>Q-learning 目标：让 Q 接近真值（modeling）</li>
+<li>但只为了选动作时，只需 Q 值<b>排序正确</b>（prediction）</li>
+<li>所以 policy search 直接调权重看胜率，往往比"先学 Q 再 argmax"更有效</li>
+</ul>
+
+<p><b>6. Regret</b></p>
+<p>= 实际累计 reward 与 一开始就最优 累计 reward 的差。即使最终学到最优，"路上犯错"也算 regret。</p>
+</div>
+
+<hr>
+
+<!-- ========================= CHEAT SHEET ========================= -->
+<h2 id="cheat">📋 一页 Cheat Sheet（考前最后看）</h2>
+
+<h3>Search 算法对比</h3>
+<table>
+<tr><th>Algo</th><th>Fringe</th><th>Priority</th><th>Complete</th><th>Optimal</th><th>Notes</th></tr>
+<tr><td>DFS</td><td>Stack</td><td>—</td><td>有限+防环</td><td>否</td><td>空间小 O(bm)</td></tr>
+<tr><td>BFS</td><td>Queue</td><td>—</td><td>是</td><td>仅 unit cost</td><td>空间大 O(b^s)</td></tr>
+<tr><td>UCS</td><td>PQ</td><td>g(n)</td><td>是</td><td>是</td><td>cost > 0</td></tr>
+<tr><td>Greedy</td><td>PQ</td><td>h(n)</td><td>是（带防环）</td><td>否</td><td>可能很差</td></tr>
+<tr><td>A* tree</td><td>PQ</td><td>f=g+h</td><td>是</td><td>h admissible</td><td></td></tr>
+<tr><td>A* graph</td><td>PQ + closed</td><td>f=g+h</td><td>是</td><td>h consistent</td><td></td></tr>
+</table>
+
+<h3>Heuristic 性质</h3>
+<ul>
+  <li><b>Admissible</b>: 0 ≤ h(s) ≤ h*(s)（tree A* 最优）</li>
+  <li><b>Consistent</b>: h(A) ≤ cost(A,C) + h(C)（graph A* 最优）</li>
+  <li>Consistent ⟹ Admissible</li>
+  <li>Max of admissible = admissible；relaxation 是 admissible 来源</li>
+</ul>
+
+<h3>CSP 工具箱</h3>
+<ul>
+  <li><b>Backtracking</b> = DFS + var ordering + fail-on-violation</li>
+  <li><b>Forward Checking</b>：赋值后划掉邻居违反值</li>
+  <li><b>Arc Consistency</b>：X→Y 一致 = 每个 x∈D_X 有匹配 y∈D_Y；删值从 tail</li>
+  <li><b>MRV</b>（选剩余最少的变量）、<b>LCV</b>（选限制最少的值）</li>
+  <li>Tree CSP: O(n·d²)；cutset c: O(d^c · (n-c)·d²)</li>
+  <li><b>Min-Conflicts</b>：local search，对随机 CSP 几乎常数时间</li>
+</ul>
+
+<h3>Game Search</h3>
+<ul>
+  <li>Minimax: O(b^m)，对最优对手最优</li>
+  <li>α-β: 完美排序 → O(b^{m/2})；只保根值正确</li>
+  <li>α = MAX 沿 path 的最佳；β = MIN 沿 path 的最佳</li>
+  <li>Expectimax: 用 chance 节点，期望平均；<b>无法剪枝</b></li>
+  <li>Expectimax 对效用<b>量级敏感</b>；Minimax 对单调变换不变</li>
+  <li>MCTS UCB1: U(n)/N(n) + C·√(ln N(parent)/N(n))；UCT 选 N 最大的孩子</li>
+  <li>Multi-agent utility tuple → <b>一般不能剪枝</b></li>
+</ul>
+
+<h3>MDP 公式</h3>
+<div class="formula-block">
+<b>Bellman 最优</b>：V*(s) = max<sub>a</sub> ∑<sub>s'</sub> T(s,a,s')[R(s,a,s') + γV*(s')]<br>
+<b>Q*</b>：Q*(s,a) = ∑<sub>s'</sub> T(s,a,s')[R(s,a,s') + γ·max<sub>a'</sub> Q*(s',a')]<br>
+<b>Policy</b>：π*(s) = argmax<sub>a</sub> Q*(s,a)<br>
+<b>Policy Evaluation</b>：V<sup>π</sup>(s) = ∑<sub>s'</sub> T(s,π(s),s')[R + γV<sup>π</sup>(s')]<br>
+<b>Discounted utility</b>：U = ∑ γ<sup>t</sup>·r_t
+</div>
+
+<h3>RL 公式</h3>
+<div class="formula-block">
+<b>TD value</b>：V(s) ← V(s) + α·[r + γV(s') − V(s)]<br>
+<b>Q-learning</b>：Q(s,a) ← Q(s,a) + α·[r + γ·max<sub>a'</sub> Q(s',a') − Q(s,a)]<br>
+<b>Approx Q</b>：w_i ← w_i + α·[r + γ·max<sub>a'</sub> Q(s',a') − Q(s,a)]·f_i(s,a)<br>
+<b>Exploration f</b>：f(u, n) = u + k/n
+</div>
+
+<h3>常考易错点</h3>
+<ol>
+  <li>A* 终止条件：<b>dequeue</b> goal 时停，不是 enqueue</li>
+  <li>Tree search 用 admissible，Graph search 要 consistent</li>
+  <li>Arc consistency 从 <b>tail</b> 删值</li>
+  <li>MRV 选<b>最少</b>剩余值（fail-fast），LCV 选<b>最少</b>限制其他</li>
+  <li>α-β 中间节点值可能错，包括根的孩子 —— naïve 版不能直接选动作</li>
+  <li>Expectimax 对效用量级敏感，minimax 不</li>
+  <li>Policy 通常比 V 早收敛</li>
+  <li>从 Q 抽 policy trivial，从 V 抽要 mini-expectimax</li>
+  <li>Q-learning 是 <b>off-policy</b>：随便走都能学到 Q*（前提：探索充分）</li>
+  <li>Discount γ&lt;1 保证收敛，也表达"早奖励更值钱"</li>
+  <li>Forward checking 检测不到所有失败（如 NT 和 SA 都不能蓝），AC 能</li>
+  <li>Bellman update 在 VI / PE / PI 里本质都是 one-step expectimax</li>
+</ol>
+
+<div class="good">
+<b>祝考试顺利 🍀</b>
+<p style="margin:8px 0 0 0;font-size:0.9em">该笔记基于 sp26 lec01–lec12 原文，结合标准 CS188 教学逻辑整理。如发现某 lecture 你的教授讲法/侧重点不同，告诉我哪一节，我可以重新校对该部分。</p>
+</div>
+
+</body>
+</html>
