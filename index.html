@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#0b5394">
-<title>CS188 复习笔记 (Lec 01–17)</title>
+<title>CS188 复习笔记 (Lec 01–21)</title>
 <style>
   :root {
     --bg: #fafaf7; --fg: #1a1a1a; --accent: #0b5394;
@@ -70,8 +70,8 @@
 </head>
 <body>
 
-<h1>CS188 复习笔记 (Lec 01–17)</h1>
-<p style="color:var(--muted)">范围：Search · CSPs · Games · MDPs · RL · Bayes Nets · Markov Models · HMMs · 来源：sp26 课件 + textbook（已通过 NotebookLM 校对原文）</p>
+<h1>CS188 复习笔记 (Lec 01–21)</h1>
+<p style="color:var(--muted)">范围：Search · CSPs · Games · MDPs · RL · Bayes Nets · Markov Models · HMMs · Decision Networks · Machine Learning · 来源：sp26 课件 + textbook（已通过 NotebookLM 校对原文）</p>
 
 <div class="toc">
   <strong>目录</strong>
@@ -90,15 +90,19 @@
     <li><a href="#l11">Lec 11 · RL I (Model-Based / Direct Eval / TD / Q-Learning)</a></li>
     <li><a href="#l12">Lec 12 · RL II (Exploration / Approximate Q / Policy Search)</a></li>
   </ol>
-  <p style="margin:10px 0 4px;font-size:0.88em;color:var(--muted)"><b>期末部分 (Lec 13–17)</b></p>
+  <p style="margin:10px 0 4px;font-size:0.88em;color:var(--muted)"><b>期末部分 (Lec 13–21)</b></p>
   <ol start="13">
     <li><a href="#l13">Lec 13 · 概率基础 + 独立性 + Naive Bayes</a></li>
     <li><a href="#l14">Lec 14 · Bayes Net 表示 + D-Separation</a></li>
     <li><a href="#l15">Lec 15 · Variable Elimination（精确推理）</a></li>
     <li><a href="#l16">Lec 16 · Sampling（近似推理：Prior / Rejection / LW / Gibbs）</a></li>
     <li><a href="#l17">Lec 17 · Markov Models + HMMs + Forward + Viterbi</a></li>
+    <li><a href="#l18">Lec 18 · Dynamic Bayes Nets + Particle Filtering</a></li>
+    <li><a href="#l19">Lec 19 · Rational Decisions（Decision Networks + VPI）</a></li>
+    <li><a href="#l20">Lec 20 · Machine Learning I（Decision Trees + Linear Regression）</a></li>
+    <li><a href="#l21">Lec 21 · Machine Learning II（Naive Bayes + Bayesian Learning）</a></li>
   </ol>
-  <p style="margin:10px 0 0;font-size:0.88em"><a href="#cheat">📋 期中 Cheat Sheet</a> · <a href="#cheat2">📋 期末 Cheat Sheet (Lec 13–17)</a></p>
+  <p style="margin:10px 0 0;font-size:0.88em"><a href="#cheat">📋 期中 Cheat Sheet</a> · <a href="#cheat2">📋 期末 Cheat Sheet (Lec 13–21)</a></p>
 </div>
 
 <hr>
@@ -2632,8 +2636,352 @@ argmax<sub>x<sub>1:T</sub></sub> P(x<sub>1:T</sub> | e<sub>1:T</sub>) = argmax P
 
 <hr>
 
+<!-- ========================= LEC 18 ========================= -->
+<h2 id="l18">18. Dynamic Bayes Nets + Particle Filtering <span class="lec-tag">Lec 18</span></h2>
+
+<p style="color:var(--muted)">（lec18 前半是 lec17 的 recap：Forward / Stationary / HMM / Viterbi。这里只记新内容。）</p>
+
+<h3>18.1 Dynamic Bayes Nets (DBN)</h3>
+
+<p>HMM 的限制：每个时刻只有<b>一个</b> state 变量。现实 state 通常是多变量组合（机器人：位置+朝向+速度；ICU：心率+血压+...）。</p>
+
+<div class="formula-block">
+<b>DBN = 把固定的 BN 结构在每个时间步重复一次</b>，变量可以有上一时间步的父节点。
+</div>
+
+<h4>DBN vs HMM</h4>
+<table>
+<tr><th></th><th>HMM</th><th>DBN</th></tr>
+<tr><td>每时刻 state</td><td>一个变量</td><td>多个变量（内部有 BN 结构）</td></tr>
+<tr><td>表示能力</td><td colspan="2" class="center">等价（任意 HMM = 单变量 DBN；任意离散 DBN = 巨型 state 的 HMM）</td></tr>
+<tr><td>参数（20 布尔, 每个 3 父）</td><td>2<sup>20</sup>×2<sup>20</sup> ≈ 10<sup>12</sup></td><td>20 × 2<sup>3</sup> = 160</td></tr>
+</table>
+
+<div class="note">
+<b>DBN 的唯一好处</b>：稀疏的内部依赖 → 参数从指数降到线性。精确推理用 VE，但当前时刻 factor 仍含所有 state 变量 → 可能指数爆炸 → 需要近似（Particle Filter）。
+</div>
+
+<h3>18.2 Particle Filtering ⭐⭐⭐</h3>
+
+<h4>为什么需要</h4>
+<ul>
+  <li>\|X\| &gt; 10<sup>6</sup> 时 Forward 的 O(\|X\|²) 跑不动</li>
+  <li>Likelihood Weighting 在 HMM 上：T 步后权重 ~ O(small<sup>T</sup>)，<b>指数退化</b></li>
+</ul>
+
+<div class="formula-block">
+<b>核心想法</b>：不显式存 belief，用一群<b>粒子 (particles)</b> 表示。<br>
+P(x) ≈ 落在状态 x 上的粒子比例。粒子数 N ≪ \|X\|。
+</div>
+
+<h4>三步算法（每个时间步循环）</h4>
+<table>
+<tr><th>步</th><th>操作</th><th>说明</th></tr>
+<tr><td><b>1. Predict</b></td><td>x<sub>t+1</sub><sup>(j)</sup> ~ P(X<sub>t+1</sub> \| x<sub>t</sub><sup>(j)</sup>)</td><td>每个粒子按 transition 独立走一步（不看 evidence）</td></tr>
+<tr><td><b>2. Update</b></td><td>w<sup>(j)</sup> = P(e<sub>t+1</sub> \| x<sub>t+1</sub><sup>(j)</sup>)</td><td>按 sensor 给每个粒子一个权重（像 LW）</td></tr>
+<tr><td><b>3. Resample</b></td><td>按权重<b>有放回</b>采 N 个新粒子</td><td>高权重粒子复制多份，低权重粒子消失；权重重置 1/N</td></tr>
+</table>
+
+<div class="good">
+<b>Resample 是核心创新</b>："适者生存" —— 通过周期性重生粒子群，防止权重指数退化。<br>
+<b>有放回</b>：每次都从完整加权粒子集里挑 → 同一粒子可被复制多份。如果不放回就只是洗牌，起不到重生作用。
+</div>
+
+<h4>复杂度 & 对比</h4>
+<ul>
+  <li>每步 O(N)，<b>与 \|X\| 无关</b></li>
+  <li>vs Gibbs：Gibbs 维护 1 个 state 重采单变量（静态 BN）；PF 维护 N 个粒子整体走 transition（时序）</li>
+</ul>
+
+<table>
+<tr><th>方法</th><th>belief 表示</th><th>适合</th></tr>
+<tr><td>Forward (exact)</td><td>完整概率表</td><td>小 \|X\|（&lt;10⁶）</td></tr>
+<tr><td>Particle Filter</td><td>N 个粒子</td><td>大 \|X\| + 长 T（机器人定位、SLAM）</td></tr>
+</table>
+
+<div class="quiz">
+<b>📝 高频考点 · Lec 18</b>
+<p><b>1. 手动跑 PF 几步</b>：给粒子初始位置 + transition + sensor + evidence + 随机数。流程：predict（按 transition 配区间用随机数采）→ update（查 P(e\|x) 记权重）→ resample（权重归一化成累积分布，用随机数采 N 个）。</p>
+<p><b>2. 为什么 resample</b>：防权重指数退化（连续乘 P(e\|x)∈[0,1]）。</p>
+<p><b>3. PF vs Forward 选哪个</b>：\|X\| 大、多变量 state → PF；小 → Forward。</p>
+<p><b>4. DBN 参数计算</b>：给结构和变量数算总参数，与等价 HMM 比较。</p>
+</div>
+
+<hr>
+
+<!-- ========================= LEC 19 ========================= -->
+<h2 id="l19">19. Rational Decisions（Decision Networks + VPI）<span class="lec-tag">Lec 19</span></h2>
+
+<h3>19.1 Utility 理论（深化）</h3>
+
+<table>
+<tr><th>类型</th><th>用在</th><th>性质</th></tr>
+<tr><td><b>Ordinal</b>（序数）</td><td>Minimax</td><td>只需排序对，最优决策在单调变换下不变</td></tr>
+<tr><td><b>Cardinal</b>（基数）</td><td>Expectimax</td><td>需要数值大小有意义（要加权平均）</td></tr>
+</table>
+
+<h4>Rational Preferences 四公理</h4>
+<div class="formula-block">
+<b>Orderability</b>：A≻B ∨ B≻A ∨ A~B<br>
+<b>Transitivity</b>：A≻B ∧ B≻C ⇒ A≻C<br>
+<b>Continuity</b>：A≻B≻C ⇒ ∃p [p,A; 1-p,C] ~ B<br>
+<b>Independence</b>：A~B ⇔ [p,A; 1-p,C] ~ [p,B; 1-p,C]
+</div>
+<p><b>定理</b>：满足四公理的理性偏好 ⟺ 行为可描述为 maximize expected utility (MEU)。违反 transitivity → 被 "money pump" 掏空钱。</p>
+
+<h4>Money & 风险厌恶</h4>
+<ul>
+  <li>EMV(L) = pX + (1-p)Y（期望货币值）；U(L) = pU(X) + (1-p)U(Y)（期望效用）</li>
+  <li>通常 U(L) &lt; U(EMV(L)) → <b>risk-averse</b>（效用函数凹）</li>
+  <li>Certainty equivalent CE(L)：让你 indifferent 的确定现金；<b>insurance premium = EMV(L) − CE(L)</b></li>
+  <li><b>Optimizer's Curse</b>：从 k 个估计挑最大的，实际值通常显著低于估计（基金/药物试验/p-hacking）</li>
+</ul>
+
+<h4>序列效用</h4>
+<p>Stationary preferences ⇒ 唯一合理定义是 <b>discounted additive utility</b>：U([r₀,r₁,r₂,...]) = r₀ + γr₁ + γ²r₂ + ...</p>
+<p><b>Potential-based reward shaping</b>：R'(s,a,s') = R(s,a,s') + γΦ(s') − Φ(s) 不改变最优 policy（沿轨迹 telescope 成常数 −Φ(s₀)），但能加速 RL。</p>
+
+<h3>19.2 Decision Networks ⭐</h3>
+
+<div class="formula-block">
+<b>Decision Network = Bayes Net + Action 节点 + Utility 节点</b>
+</div>
+
+<table>
+<tr><th>节点</th><th>形状</th><th>说明</th></tr>
+<tr><td>Chance</td><td>椭圆</td><td>普通随机变量（有 CPT）</td></tr>
+<tr><td>Action</td><td><b>矩形</b></td><td>agent 决策，不能有父节点，值由算法选定</td></tr>
+<tr><td>Utility</td><td><b>菱形</b></td><td>依赖 action 和 chance 父节点，给数值效用</td></tr>
+</table>
+
+<h4>决策算法</h4>
+<pre>固定 evidence e
+For 每个 action a:
+    固定 action 节点为 a
+    算 utility 的 chance 父节点后验 P(W | e, a)   ← Bayes net inference!
+    算 EU(a|e) = ∑_w P(w|e,a) · U(a,w)
+返回 EU 最高的 action</pre>
+
+<div class="note">
+两层：<b>第 1 层</b> 用 BN 部分（先验 + sensor）算后验 P(W|e,a)；<b>第 2 层</b> 用后验加权算 EU。"parents W of U" 指 U 的 chance 父节点。
+</div>
+
+<h4>算例：要不要带伞（观测 F=bad）</h4>
+<p>BN 推理先得 P(W|F=bad) = α·P(F=bad|W)·P(W) = (sun:0.34, rain:0.66)。然后：</p>
+<table>
+<tr><th>Action</th><th>EU 计算</th><th>EU</th></tr>
+<tr><td>leave</td><td>0.34×100 + 0.66×0</td><td>34</td></tr>
+<tr><td>take</td><td>0.34×20 + 0.66×70</td><td><b>53</b> ✓</td></tr>
+</table>
+
+<h3>19.3 Value of Information (VPI) ⭐⭐⭐</h3>
+
+<p><b>核心问题</b>：决策前去观测某变量值不值得？</p>
+
+<div class="formula-block">
+VPI(E<sub>i</sub> | e) = [ ∑<sub>e<sub>i</sub></sub> P(e<sub>i</sub>|e) · max<sub>a</sub> EU(a|e<sub>i</sub>,e) ] − max<sub>a</sub> EU(a|e)<br>
+&nbsp; = 观测后的期望 MEU − 不观测的 MEU
+</div>
+
+<div class="warn">
+<b>关键：max 在 sum 里面</b>。先观测意味着可以针对每个观测结果分别选最优 action —— 这种"看情况办事"的能力正是信息价值的来源。
+</div>
+
+<h4>算例：要不要先看天气预报</h4>
+<ul>
+  <li>不看：EU(leave)=70, EU(take)=35 → MEU = <b>70</b></li>
+  <li>看了 F=good：选 leave，得 89；看了 F=bad：选 take，得 53</li>
+  <li>观测后期望 = 0.65×89 + 0.35×53 = <b>76.4</b></li>
+  <li><b>VPI = 76.4 − 70 = 6.4</b>（看预报代价 &lt; 6.4 就值得）</li>
+</ul>
+
+<h4>VPI 三大性质</h4>
+<table>
+<tr><th>性质</th><th>内容</th><th>直觉</th></tr>
+<tr><td><b>非负</b></td><td>VPI(E|e) ≥ 0</td><td>多知道信息绝不会更差（最差就是忽略它）</td></tr>
+<tr><td><b>非可加</b></td><td>VPI(E<sub>i</sub>,E<sub>j</sub>) ≠ VPI(E<sub>i</sub>)+VPI(E<sub>j</sub>)</td><td>信息可能冗余或互补</td></tr>
+<tr><td><b>次序无关</b></td><td>VPI(E<sub>i</sub>,E<sub>j</sub>) = VPI(E<sub>j</sub>,E<sub>i</sub>)</td><td>同时观测，先看哪个无所谓</td></tr>
+</table>
+<p><b>VPI = 0 ⟺ 观测不改变最优 action</b>。</p>
+
+<div class="quiz">
+<b>📝 高频考点 · Lec 19</b>
+<p><b>1. 算 EU 选 action</b>：给 decision network + utility 表 + 后验，算每个 action 的 EU。</p>
+<p><b>2. 算 VPI</b>：(a) 先算不观测 MEU；(b) 对观测变量每个取值算条件 MEU 再加权；(c) 相减。</p>
+<p><b>3. VPI 性质判断</b>：陷阱 "VPI 一定 &gt;0" ❌（可以=0）。判断 VPI=0：观测不改变最优 action。</p>
+<p><b>4. 节点类型识别</b>：矩形=action，菱形=utility，椭圆=chance。</p>
+</div>
+
+<hr>
+
+<!-- ========================= LEC 20 ========================= -->
+<h2 id="l20">20. Machine Learning I — Decision Trees & Linear Regression <span class="lec-tag">Lec 20</span></h2>
+
+<h3>20.1 Supervised Learning 框架</h3>
+
+<div class="formula-block">
+学未知函数 f。输入：带标签训练集 (x<sub>j</sub>, y<sub>j</sub>)，y<sub>j</sub>=f(x<sub>j</sub>)。输出：假设 h，在 test set 上预测好。
+</div>
+
+<table>
+<tr><th>类型</th><th>输出</th><th>例子</th></tr>
+<tr><td>Classification</td><td>离散</td><td>图像→"giraffe"；email→spam/ham</td></tr>
+<tr><td>Regression</td><td>实数</td><td>房子特征→价格</td></tr>
+</table>
+
+<p><b>Ockham's razor</b>：同样拟合时，选更简单的 h（泛化更好）。</p>
+
+<h3>20.2 Decision Trees</h3>
+
+<ul>
+  <li>把输入空间<b>分区</b>，每区一个标签。内部节点测属性，边对应取值，叶子是分类</li>
+  <li>离散决策树能表达<b>任何</b>输入函数（truth table 每行一条路径）</li>
+  <li>⚠️ 完全记录样本的树 = lookup table，<b>不泛化</b>；要泛化必须紧凑</li>
+  <li>n 个布尔属性 → 2<sup>2<sup>n</sup></sup> 种可能的树</li>
+</ul>
+
+<div class="warn">
+<b>表达能力悖论</b>：表达能力 ↑ → 真函数更可能被表示，但一致假设也变多 → 很多一致假设 test error 大 → <b>可能降低准确率</b>（overfitting）。
+</div>
+
+<h4>决策树学习算法</h4>
+<pre>function DTL(examples, attributes, parent_examples):
+    if examples 空:        return Plurality-Value(parent_examples)
+    if 所有同类:           return 那个类
+    if attributes 空:      return Plurality-Value(examples)
+    else:
+        A ← argmax_a Importance(a, examples)   # 用 Information Gain
+        for A 的每个取值 v:
+            exs ← examples 中 A=v 的子集
+            subtree ← DTL(exs, attributes−A, examples)
+        return tree</pre>
+
+<h4>Information Gain ⭐⭐⭐</h4>
+<div class="formula-block">
+<b>Entropy</b>：H(⟨p₁,...,p<sub>n</sub>⟩) = ∑<sub>i</sub> −p<sub>i</sub> log p<sub>i</sub><br>
+便捷记号 B(p) = H(⟨p,1−p⟩)；<b>B(0)=B(1)=0</b>（确定），<b>B(0.5)=1</b>（最不确定）<br>
+<br>
+根节点 p 正 n 负 → 需 B(p/(p+n)) bits<br>
+<b>Information Gain = B(p/(p+n)) − ∑<sub>k</sub> (p<sub>k</sub>+n<sub>k</sub>)/(p+n) · B(p<sub>k</sub>/(p<sub>k</sub>+n<sub>k</sub>))</b>
+</div>
+<p>选 Information Gain 最大的属性。例（12 餐厅样本，p=n=6）：按 Patrons 分裂 gain=0.541，按 Type 分裂 gain=0。</p>
+
+<h3>20.3 Training / Validation / Test</h3>
+<table>
+<tr><th>集</th><th>用途</th></tr>
+<tr><td>Training</td><td>生成假设 h</td></tr>
+<tr><td>Validation</td><td>在多个 h 里挑最好的（调超参）</td></tr>
+<tr><td>Test</td><td>最终评估 accuracy —— <b>永不偷看！</b></td></tr>
+</table>
+
+<h3>20.4 Linear Regression</h3>
+
+<div class="formula-block">
+<b>模型</b>：h<sub>w</sub>(x) = w₀ + w₁x<br>
+<b>L2 loss</b>：Loss = ∑<sub>j</sub> (y<sub>j</sub> − h<sub>w</sub>(x<sub>j</sub>))²<br>
+<b>最优解</b>：在 w* 处所有偏导 = 0<br>
+<b>多维闭式解</b>：w* = (X<sup>T</sup>X)<sup>−1</sup> X<sup>T</sup> y
+</div>
+
+<div class="quiz">
+<b>📝 高频考点 · Lec 20</b>
+<p><b>1. 算 Information Gain</b>：分裂前熵 − 分裂后加权熵。记住 B(0)=B(1)=0, B(0.5)=1。</p>
+<p><b>2. 决策树构建</b>：每步选 gain 最大的属性。</p>
+<p><b>3. 线性回归</b>：L2 loss 求导置零；通解 w*=(XᵀX)⁻¹Xᵀy。</p>
+<p><b>4. Overfitting 概念</b>：表达能力太强 → 一致假设多 → test error 大。</p>
+</div>
+
+<hr>
+
+<!-- ========================= LEC 21 ========================= -->
+<h2 id="l21">21. Machine Learning II — Naive Bayes & Bayesian Learning <span class="lec-tag">Lec 21</span></h2>
+
+<h3>21.1 ML / MAP / Bayesian 三层框架</h3>
+
+<div class="formula-block">
+<b>Likelihood</b>：P(D | h) = ∏<sub>j</sub> P(y<sub>j</sub> | x<sub>j</sub>; h)<br>
+<b>Maximum Likelihood</b>：h<sub>ML</sub> = argmax<sub>h</sub> P(D | h)<br>
+<b>Maximum a Posteriori</b>：h<sub>MAP</sub> = argmax<sub>h</sub> P(D|h) P(h)<br>
+<b>Bayesian</b>：P(y|x,D) = ∑<sub>h</sub> P(y|x;h) P(h|D)
+</div>
+<p>均匀先验下 h<sub>ML</sub> = h<sub>MAP</sub>。</p>
+
+<h3>21.2 Maximum Likelihood 参数估计</h3>
+
+<p>硬币例：抛 3 次 H,H,T。Likelihood = θ²(1−θ)。取 log：L = 2logθ + log(1−θ)。求导置零 → θ<sub>ML</sub> = 2/3。</p>
+<div class="formula-block">
+<b>一般结论</b>：h 个正面、t 个反面 → θ<sub>ML</sub> = h/(h+t)（经验频率）
+</div>
+
+<h3>21.3 Laplace Smoothing ⭐</h3>
+
+<p><b>问题</b>：看 3 个正面 → θ<sub>ML</sub>=0？太极端。<b>解法</b>：假装每个结果事先见过 α 次。</p>
+<div class="formula-block">
+K 值变量：θ<sub>k</sub> = (N<sub>k</sub> + α) / (N + Kα)<br>
+α ≫ N → θ<sub>k</sub> → 1/K（均匀先验）；α ≪ N → θ<sub>k</sub> → N<sub>k</sub>/N（ML 估计）
+</div>
+
+<h3>21.4 Naive Bayes 分类器 ⭐⭐⭐</h3>
+
+<div class="diagram">
+<svg viewBox="0 0 280 130" width="280">
+  <circle class="node-circle" cx="140" cy="35" r="22" fill="#ffe082"/><text class="node-text" x="140" y="35">C</text>
+  <circle class="node-circle" cx="60" cy="100" r="20" fill="#c8e6c9"/><text class="node-text" x="60" y="100">W₁</text>
+  <circle class="node-circle" cx="140" cy="100" r="20" fill="#c8e6c9"/><text class="node-text" x="140" y="100">W₂</text>
+  <circle class="node-circle" cx="220" cy="100" r="20" fill="#c8e6c9"/><text class="node-text" x="220" y="100">Wₙ</text>
+  <line class="edge-line" x1="125" y1="50" x2="72" y2="85" marker-end="url(#anb)"/>
+  <line class="edge-line" x1="140" y1="57" x2="140" y2="78" marker-end="url(#anb)"/>
+  <line class="edge-line" x1="155" y1="50" x2="208" y2="85" marker-end="url(#anb)"/>
+  <defs>
+    <marker id="anb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#555"/>
+    </marker>
+  </defs>
+</svg>
+<div class="diagram-caption">Naive Bayes：class C → 所有 feature W<sub>i</sub>。feature 给定 C 后两两条件独立。</div>
+</div>
+
+<div class="formula-block">
+P(C, W₁,...,Wₙ) = P(C) ∏<sub>i</sub> P(W<sub>i</sub> | C)<br>
+<br>
+<b>分类（推理）</b>：P(c | w₁,...,wₙ) = α P(c) ∏<sub>i</sub> P(w<sub>i</sub> | c)<br>
+对每个 class 值乘 n+1 个数，再 normalize
+</div>
+
+<ul>
+  <li>Naive Bayes 是 <b>polytree</b> → 推理线性时间</li>
+  <li>实际用 <b>log 空间</b>累加避免下溢：log P(c,w) = log P(c) + ∑ log P(w<sub>i</sub>|c)</li>
+  <li>参数：P(C) 用相对频率；P(W<sub>i</sub>|C) 用词频，<b>必须 Laplace smoothing</b>（生词否则概率打 0）</li>
+  <li>Naive Bayes 是<b>线性分类器</b>（log 决策边界是线性的）；训练线性时间、总收敛、抗噪</li>
+</ul>
+
+<h3>21.5 Bayesian Learning</h3>
+
+<div class="formula-block">
+学习 = 对 H 上的概率分布做贝叶斯更新<br>
+<b>后验</b>：P(h<sub>k</sub>|D) = α P(D|h<sub>k</sub>) P(h<sub>k</sub>) = α · Likelihood · Prior<br>
+<b>预测</b>：P(d<sub>N+1</sub>|D) = ∑<sub>k</sub> P(d<sub>N+1</sub>|h<sub>k</sub>) P(h<sub>k</sub>|D)
+</div>
+
+<p><b>例：Surprise Candy</b>。5 种糖果袋（h₁=100%cherry ... h₅=100%lime）。观测 5 个 lime 后，后验集中到 h₅(0.624)、h₄(0.297)。预测下一个 lime：∑<sub>k</sub> P(lime|h<sub>k</sub>)P(h<sub>k</sub>|D) = 0.886。</p>
+
+<div class="good">
+Bayesian learning 给<b>最优预测</b>，但 ∑<sub>k</sub> 对大/无限 H 可能不可行（MCMC 让它复活）。
+</div>
+
+<div class="quiz">
+<b>📝 高频考点 · Lec 21</b>
+<p><b>1. Naive Bayes 分类</b>：给 P(C) 和 P(W<sub>i</sub>|C) 表，对文档算 P(c)∏P(w<sub>i</sub>|c)，比较哪个 class 大。</p>
+<p><b>2. Laplace smoothing</b>：θ<sub>k</sub> = (N<sub>k</sub>+α)/(N+Kα)，注意 K 是取值数。</p>
+<p><b>3. ML 参数估计</b>：写 likelihood → log → 求导置零。θ<sub>ML</sub>=h/(h+t)。</p>
+<p><b>4. Bayesian learning</b>：算后验 P(h<sub>k</sub>|D) + 加权预测（candy 题）。</p>
+<p><b>5. ML vs MAP vs Bayesian</b>：均匀先验下 ML=MAP；Bayesian 不挑单个 h。</p>
+</div>
+
+<hr>
+
 <!-- ========================= EXPANDED CHEAT SHEET ========================= -->
-<h2 id="cheat2">📋 期末 Cheat Sheet（Lec 13–17 + 期中精华）</h2>
+<h2 id="cheat2">📋 期末 Cheat Sheet（Lec 13–21 + 期中精华）</h2>
 
 <h3>Bayes Net</h3>
 <div class="formula-block">
@@ -2694,6 +3042,29 @@ a<sub>t</sub>[x<sub>t</sub>] = argmax<sub>x<sub>t-1</sub></sub> P(x<sub>t</sub>|
 返回时 backtrace from argmax<sub>x<sub>T</sub></sub> m<sub>T</sub>[x<sub>T</sub>]
 </div>
 
+<h3>Particle Filter</h3>
+<div class="formula-block">
+三步循环：<b>Predict</b> x<sup>(j)</sup> ~ P(X<sub>t+1</sub>|x<sub>t</sub><sup>(j)</sup>) → <b>Update</b> w<sup>(j)</sup> = P(e<sub>t+1</sub>|x<sup>(j)</sup>) → <b>Resample</b>（有放回采 N 个，权重重置）<br>
+每步 O(N)，与 |X| 无关。Resample 防权重退化。
+</div>
+
+<h3>Decision Network + VPI</h3>
+<div class="formula-block">
+<b>EU(a|e)</b> = ∑<sub>w</sub> P(w|e,a) · U(a,w)；选 max<sub>a</sub> EU<br>
+<b>VPI(E|e)</b> = [∑<sub>e'</sub> P(e'|e) max<sub>a</sub> EU(a|e',e)] − max<sub>a</sub> EU(a|e)<br>
+VPI 性质：非负 · 非可加 · 次序无关；VPI=0 ⟺ 观测不改变最优 action
+</div>
+
+<h3>Machine Learning</h3>
+<div class="formula-block">
+<b>Information Gain</b> = B(p/(p+n)) − ∑<sub>k</sub> (p<sub>k</sub>+n<sub>k</sub>)/(p+n)·B(p<sub>k</sub>/(p<sub>k</sub>+n<sub>k</sub>))；B(0)=B(1)=0, B(0.5)=1<br>
+<b>线性回归</b>：w* = (XᵀX)⁻¹Xᵀy<br>
+<b>ML 估计</b>：θ<sub>ML</sub> = h/(h+t)<br>
+<b>Laplace</b>：θ<sub>k</sub> = (N<sub>k</sub>+α)/(N+Kα)<br>
+<b>Naive Bayes</b>：P(c|w<sub>1:n</sub>) = α P(c) ∏<sub>i</sub> P(w<sub>i</sub>|c)<br>
+<b>Bayesian</b>：P(d<sub>N+1</sub>|D) = ∑<sub>k</sub> P(d<sub>N+1</sub>|h<sub>k</sub>) P(h<sub>k</sub>|D)
+</div>
+
 <h3>期末易错点</h3>
 <ol>
   <li><b>V-structure 反直觉</b>：未观测时独立；观测 collider 或其后代 → 激活</li>
@@ -2704,6 +3075,12 @@ a<sub>t</sub>[x<sub>t</sub>] = argmax<sub>x<sub>t-1</sub></sub> P(x<sub>t</sub>|
   <li><b>HMM Forward 两阶段顺序</b>：predict 先 (transition), update 后 (sensor)</li>
   <li><b>Mini-Forward vs Forward</b>：Mini 没 evidence，Forward 有 evidence + sensor 项</li>
   <li><b>Stationary distribution 与初始无关</b>，但需要 ergodic（环就不 ergodic）</li>
+  <li><b>Particle Filter resample 必须有放回</b>：否则只是洗牌，起不到重生作用</li>
+  <li><b>VPI 可以 = 0</b>：观测不改变最优决策时；VPI 非负但非可加</li>
+  <li><b>VPI 公式 max 在 sum 里</b>：先观测能针对每个结果分别选最优 action</li>
+  <li><b>Naive Bayes 必须 Laplace smoothing</b>：否则生词把整个概率打成 0</li>
+  <li><b>Information Gain</b>：B(0)=B(1)=0（纯），别忘记加权（子集大小占比）</li>
+  <li><b>ML = MAP</b> 仅当先验均匀</li>
 </ol>
 
 <hr>
